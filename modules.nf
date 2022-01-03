@@ -419,7 +419,7 @@ process GenerateConsensus {
 	# pull out header
 	grep "#" \${R1}_pre2.vcf > \${R1}.vcf
 	# get rid of long sgRNAs that are called due to fake depths
-	grep -v "#" \${R1}_pre2.vcf | awk -F'\t' 'length($4) <200 { print }' >> \${R1}.vcf
+	grep -v "#" \${R1}_pre2.vcf | awk -F'\t' 'length($4) <60 { print }' >> \${R1}.vcf
 
         # Index and generate consensus from vcf with majority variants
         /usr/local/miniconda/bin/bgzip \${R1}.vcf
