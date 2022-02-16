@@ -352,7 +352,7 @@ process BamSorting {
 }
 
 // Generate final consensus from pileup from bam.
-process GenerateConsensus {
+process GenerateVcf {
     container "quay.io/greninger-lab/swift-pipeline:latest"
 
 	// Retry on fail at most three times 
@@ -362,19 +362,14 @@ process GenerateConsensus {
     input:
         tuple val (base), file(BAMFILE),file(INDEX_FILE),file("${base}_summary3.csv"),val(bamsize) //from Clipped_bam_ch
         file REFERENCE_FASTA
-        file TRIM_ENDS
-        file FIX_COVERAGE
         file VCFUTILS
         file REFERENCE_FASTA_FAI
         file SPLITCHR
     output:
-        file("${base}_swift.fasta")
-        file("${base}_bcftools.vcf")
-        file(INDEX_FILE)
-        file("${base}_summary.csv")
-        tuple val(base), val(bamsize), file("${base}_pre_bcftools.vcf") //into Vcf_ch
-
-    publishDir params.OUTDIR, mode: 'copy'
+        tuple val(base), val(bamsize), file(BAMFILE),file(INDEX_FILE),file("${base}_pre_bcftools.vcf"), file("${base}.vcf.gz"),file("${base}.vcf.gz.tbi"),file("${base}_summary3.csv")
+        tuple val(base),val(bamsize),file("${base}_pre_bcftools.vcf")
+    
+    publishDir params.OUTDIR, mode: 'copy', pattern: '*_pre_bcftools.vcf'
 
     shell:
     '''
@@ -414,18 +409,75 @@ process GenerateConsensus {
         #/usr/local/miniconda/bin/bcftools filter -i '(DP4[0]+DP4[1]) < (DP4[2]+DP4[3]) && ((DP4[2]+DP4[3]) > 0)' --threads !{task.cpus} \${R1}_pre_bcftools.vcf -o \${R1}.vcf
         #/usr/local/miniconda/bin/bcftools filter -e 'IMF < 0.5' \${R1}_pre2.vcf -o \${R1}.vcf
 	
-	/usr/local/miniconda/bin/bcftools filter -i 'IMF > 0.5 || (DP4[0]+DP4[1]) < (DP4[2]+DP4[3]) && ((DP4[2]+DP4[3]) > 0)' --threads !{task.cpus} \${R1}_pre_bcftools.vcf -o \${R1}_pre2.vcf
-	
-	# pull out header
-	grep "#" \${R1}_pre2.vcf > \${R1}.vcf
-	# get rid of long sgRNAs that are called due to fake depths
-	grep -v "#" \${R1}_pre2.vcf | awk -F'\t' 'length($4) <60 { print }' >> \${R1}.vcf
+        /usr/local/miniconda/bin/bcftools filter -i 'IMF > 0.5 || (DP4[0]+DP4[1]) < (DP4[2]+DP4[3]) && ((DP4[2]+DP4[3]) > 0)' --threads !{task.cpus} \${R1}_pre_bcftools.vcf -o \${R1}_pre2.vcf
+        /usr/local/miniconda/bin/bcftools norm --check-ref s --fasta-ref !{REFERENCE_FASTA} -Ov \${R1}_pre2.vcf > \${R1}_pre3.vcf
+
+        # pull out header
+        grep "#" \${R1}_pre3.vcf > \${R1}.vcf
+        # get rid of long sgRNAs that are called due to fake depths
+        grep -v "#" \${R1}_pre3.vcf | awk -F'\t' 'length($4) <60 { print }' >> \${R1}.vcf
 
         # Index and generate consensus from vcf with majority variants
         /usr/local/miniconda/bin/bgzip \${R1}.vcf
-        /usr/local/miniconda/bin/tabix \${R1}.vcf.gz 
-        cat !{REFERENCE_FASTA} | /usr/local/miniconda/bin/bcftools consensus \${R1}.vcf.gz > \${R1}.consensus.fa
+        /usr/local/miniconda/bin/tabix \${R1}.vcf.gz
+    else
+        touch \${R1}_pre_bcftools.vcf
+        touch \${R1}.vcf.gz
+    fi
 
+    '''
+}
+
+// Generate final consensus from vcf.
+process GenerateConsensus {
+    container "quay.io/biocontainers/bcftools:1.14--hde04aa1_1"
+
+	// Retry on fail at most three times 
+    errorStrategy 'retry'
+    maxRetries 3
+
+    input:
+        tuple val(base), val(bamsize), file(BAMFILE),file(INDEX_FILE),file("${base}_pre_bcftools.vcf"), file("${base}.vcf.gz"),file("${base}.vcf.gz.tbi"),file("${base}_summary3.csv")
+        file REFERENCE_FASTA
+        file REFERENCE_FASTA_FAI
+    output:
+        tuple val(base), val(bamsize), file("${base}_pre_bcftools.vcf"), file("${base}.vcf.gz"),file("${base}.vcf.gz.tbi"),file("${base}_summary3.csv"),file("${base}.consensus.fa"),file(BAMFILE),file(INDEX_FILE)
+
+    script:
+    """
+        cat ${REFERENCE_FASTA} | /usr/local/bin/bcftools consensus ${base}.vcf.gz > ${base}.consensus.fa
+    """
+}
+
+// Process consensus and annotate variants.
+process PostProcessing {
+    container "quay.io/greninger-lab/swift-pipeline:latest"
+
+	// Retry on fail at most three times 
+    errorStrategy 'retry'
+    maxRetries 3
+
+    input:
+        tuple val(base), val(bamsize), file("${base}_pre_bcftools.vcf"), file("${base}.vcf.gz"),file("${base}.vcf.gz.tbi"),file("${base}_summary3.csv"),file("${base}.consensus.fa"),file(BAMFILE),file(INDEX_FILE)
+        file REFERENCE_FASTA
+        file TRIM_ENDS
+        file FIX_COVERAGE
+        file REFERENCE_FASTA_FAI
+    output:
+        file("${base}_swift.fasta")
+        file("${base}_bcftools.vcf")
+        file("${base}_pre_bcftools.vcf")
+        file(INDEX_FILE)
+        file("${base}_summary.csv")
+
+    publishDir params.OUTDIR, mode: 'copy'
+
+    shell:
+    '''
+    R1=!{base}
+
+    if (( !{bamsize} > 92 ))
+    then
         # Create coverage file from bam for whole genome, then pipe anything that has less than 6 coverage to bed file,
         # to be masked later
         /usr/local/miniconda/bin/bedtools genomecov \\
@@ -442,13 +494,19 @@ process GenerateConsensus {
             -bed \${R1}.mask.bed \\
             -fo ref.mask.fasta
         
-        # Align to Wuhan refseq and unwrap fasta
-        cat ref.mask.fasta \${R1}.consensus.fa > align_input.fasta
-        /usr/local/miniconda/bin/mafft --auto --thread !{task.cpus} align_input.fasta > repositioned.fasta
-        awk '/^>/ { print (NR==1 ? "" : RS) $0; next } { printf "%s", $0 } END { printf RS }' repositioned.fasta > repositioned_unwrap.fasta
-        
-        # Trim ends and aligns masking of refseq to our consensus
-        python3 !{TRIM_ENDS} \${R1}
+        # If everything is below 6 coverage, just make an empty fasta
+        if grep -q "0$(printf '\t')29903" \${R1}.mask.bed; then
+            printf '>!{base}\n' > \${R1}_swift.fasta
+            printf 'n%.0s' {1..29539} >> \${R1}_swift.fasta
+        else
+            # Align to Wuhan refseq and unwrap fasta
+            cat ref.mask.fasta \${R1}.consensus.fa > align_input.fasta
+            /usr/local/miniconda/bin/mafft --auto --thread !{task.cpus} align_input.fasta > repositioned.fasta
+            awk '/^>/ { print (NR==1 ? "" : RS) $0; next } { printf "%s", $0 } END { printf RS }' repositioned.fasta > repositioned_unwrap.fasta
+            
+            # Trim ends and aligns masking of refseq to our consensus
+            python3 !{TRIM_ENDS} \${R1}
+        fi
 
         # Find percent ns, doesn't work, fix later in python script
         num_bases=$(grep -v ">" \${R1}_swift.fasta | wc | awk '{print $3-$1}')
@@ -466,8 +524,6 @@ process GenerateConsensus {
        printf '>!{base}\n' > \${R1}_swift.fasta
        printf 'n%.0s' {1..29539} >> \${R1}_swift.fasta
        percent_n=100
-       touch \${R1}_bcftools.vcf
-       touch \${R1}_pre_bcftools.vcf
     fi
     
     cp \${R1}_summary3.csv \${R1}_summary.csv
@@ -487,39 +543,6 @@ process GenerateConsensus {
 
     '''
 }
-
-// if(params.VARIANTS != false) { 
-    // process lofreq {
-    //     container "quay.io/biocontainers/lofreq:2.1.5--py38h1bd3507_3"
-
-    //     // Retry on fail at most three times 
-    //     errorStrategy 'retry'
-    //     maxRetries 3
-
-    //     input:
-    //     tuple val (base), file("${base}.clipped.bam"), file("${base}.clipped.bam.bai"),val(bamsize) from Clipped_bam_ch2
-    //     file REFERENCE_FASTA
-    //     output:
-    //     file("${base}_lofreq.vcf")
-    //     tuple val(base),val(bamsize),file("${base}_lofreq.vcf") into Vcf_ch2
-        
-    //     publishDir params.OUTDIR, mode: 'copy'
-
-    //     script:
-    //     """
-    //     #!/bin/bash
-
-    //     echo ${bamsize}
-    //     if (( ${bamsize} > 92))
-    //     then
-    //         lofreq faidx ${REFERENCE_FASTA}
-    //         /usr/local/bin/lofreq call-parallel --pp-threads ${task.cpus} --call-indels -f ${REFERENCE_FASTA} -o ${base}_lofreq.vcf ${base}.clipped.bam
-    //     else
-    //         touch ${base}_lofreq.vcf
-    //     fi
-
-    //     """
-    // }
 
 // Grab variants from vcf and output into standard format
 process AnnotateVariants {

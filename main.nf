@@ -148,7 +148,9 @@ include { MapSubgenomics } from './modules.nf'
 include { NameSorting } from './modules.nf'
 include { Clipping } from './modules.nf'
 include { BamSorting } from './modules.nf'
+include { GenerateVcf } from './modules.nf'
 include { GenerateConsensus } from './modules.nf'
+include { PostProcessing } from './modules.nf'
 include { AnnotateVariants } from './modules.nf'
 
 // Import reads depending on single end vs. paired end
@@ -236,11 +238,9 @@ workflow {
             NameSorting.out[0],
             MASTERFILE
         )
-        GenerateConsensus (
+        GenerateVcf (
             Clipping.out[0],
             REFERENCE_FASTA,
-            TRIM_ENDS,
-            FIX_COVERAGE,
             VCFUTILS,
             REFERENCE_FASTA_FAI,
             SPLITCHR
@@ -250,19 +250,29 @@ workflow {
         BamSorting (
             Aligning.out[0]
         )
-        GenerateConsensus (
+        
+        GenerateVcf (
             BamSorting.out[0],
             REFERENCE_FASTA,
-            TRIM_ENDS,
-            FIX_COVERAGE,
             VCFUTILS,
             REFERENCE_FASTA_FAI,
             SPLITCHR
         )
     }
-
+    GenerateConsensus (
+        GenerateVcf.out[0],
+        REFERENCE_FASTA,
+        REFERENCE_FASTA_FAI,
+    )
+    PostProcessing (
+        GenerateConsensus.out[0],
+        REFERENCE_FASTA,
+        TRIM_ENDS,
+        FIX_COVERAGE,
+        REFERENCE_FASTA_FAI
+    )
     AnnotateVariants (
-        GenerateConsensus.out[4],
+        GenerateVcf.out[1],
         MAT_PEPTIDES,
         MAT_PEPTIDE_ADDITION,
         RIBOSOMAL_SLIPPAGE,
