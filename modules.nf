@@ -561,12 +561,13 @@ process AnnotateVariants {
         file AT_REFGENE
         file AT_REFGENE_MRNA
         file CORRECT_AF_BCFTOOLS
+        file FIX_COMPLEX_MUTATIONS
         
     output: 
         file("${base}_bcftools_variants.csv")
         file("*")
     
-    publishDir params.OUTDIR, mode: 'copy', pattern:'*_bcftools_variants.csv'
+    publishDir params.OUTDIR, mode: 'copy', pattern:'*_bcftools_variants*'
 
     shell:
     '''
@@ -607,10 +608,12 @@ process AnnotateVariants {
         echo "SAMPLE,gene,AAPOS,AAREF,AASUB,TCOV,VCOV,AAFREQ,NTPOS,snpid,nsp,NSPPOS,NSPREF,NSPSUB" > !{base}_bcftools_variants.csv
         #sort -h -k2 -t, visualization.csv >> !{base}_bcftools_variants.csv
         cat visualization.csv >> !{base}_bcftools_variants.csv
+        python3 !{FIX_COMPLEX_MUTATIONS} -name !{base} -file !{base}_bcftools_variants.csv -fasta !{AT_REFGENE_MRNA}
 
     else 
         echo "Bam is empty, skipping annotation."
         touch !{base}_bcftools_variants.csv
+        touch !{base}_bcftools_variants_edited.csv
     fi
 
     '''

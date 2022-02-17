@@ -136,6 +136,7 @@ CORRECT_AF = file("${baseDir}/annotation/correct_AF.py")
 CORRECT_AF_BCFTOOLS = file("${baseDir}/annotation/correct_AF_bcftools.py")
 SGRNAS = file("${baseDir}/sgRNAs_60.fasta")
 FULL_SGRNAS=file("${baseDir}/sgRNAs.fasta")
+FIX_COMPLEX_MUTATIONS = file("${baseDir}/annotation/fix_complex_mutations.py")
 
 // Import processes 
 include { Trimming } from './modules.nf'
@@ -280,6 +281,7 @@ workflow {
         PROTEINS,
         AT_REFGENE,
         AT_REFGENE_MRNA,
-        CORRECT_AF_BCFTOOLS
+        CORRECT_AF_BCFTOOLS,
+        FIX_COMPLEX_MUTATIONS
     )
 }
