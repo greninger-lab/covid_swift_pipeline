@@ -138,8 +138,8 @@ if __name__ == '__main__':
 					rel_gene = gene_info.loc[gene_info['gene_name'] == name[0]]
 
 					# Grab the nt position of first nt in relevant aa
-					nt_pos_in_gene = name[1] * 3
-					first_nt_pos = nt_pos_in_gene + (rel_gene['gene_start'] - 2).values[0]
+					nt_pos_in_gene = int(name[1]) * 3
+					first_nt_pos = int(nt_pos_in_gene) + int((rel_gene['gene_start'] - 2).values[0])
 					if name[0] == "ORF1ab_polyprotein_ribosomal_slippage":
 						first_nt_pos = first_nt_pos - 13203
 						nt_pos_in_gene = nt_pos_in_gene - 13203
