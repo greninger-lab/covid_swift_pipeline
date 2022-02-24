@@ -110,6 +110,8 @@ if __name__ == '__main__':
 	for name,group in df.groupby(["gene","AAPOS"]):
 		# We don't want to bother with super low-frequency variants
 		filtered_group = group.loc[group['AAFREQ'] >= 0.05]
+		# Throw out those with deletions
+		filtered_group = group.loc[group['AASUB']!= "-"]
 		if filtered_group.shape[0] > 1:
 			filtered_group = filtered_group.sort_values(['AAFREQ'], ascending=False)
 			for i in range(len(filtered_group.index) - 1):
@@ -160,7 +162,7 @@ if __name__ == '__main__':
 
 					# Get rid of other rows old dataframe
 					for i in range(1,list_to_combine.shape[0]):
-						df = df.drop([list_to_combine.iloc[i].name])
+						df = df.drop([list_to_combine.iloc[i].name], errors="ignore")
 					
 					#print(df.loc[df['AAPOS']==name[1]])
 
