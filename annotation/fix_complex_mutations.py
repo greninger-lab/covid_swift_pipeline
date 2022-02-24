@@ -168,4 +168,7 @@ if __name__ == '__main__':
 
 	#print(df[df['AAPOS']==144])
 
+	# Drop rows with empty values - happens with 3-nucleotide complex changes that have already been covered by the 2-nt case
+	df = df.dropna(subset=['Sample'])
+
 	df.to_csv(output_variants_file, index=False)
