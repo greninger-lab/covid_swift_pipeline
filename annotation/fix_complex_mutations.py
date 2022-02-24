@@ -108,10 +108,11 @@ if __name__ == '__main__':
 
 	# Now for the actual complex mutations part!
 	for name,group in df.groupby(["gene","AAPOS"]):
-		# We don't want to bother with super low-frequency variants
-		filtered_group = group.loc[group['AAFREQ'] >= 0.05]
-		# Throw out those with deletions
-		filtered_group = group.loc[group['AASUB']!= "-"]
+		# We don't want to bother with super low-frequency variants and indels
+		filtered_group = group.loc[group['AF'] >= 0.05]
+		filtered_group = filtered_group.loc[group['AASUB']!= "-"]
+		filtered_group = filtered_group.loc[group['AASUB']!= "fs"]
+
 		if filtered_group.shape[0] > 1:
 			filtered_group = filtered_group.sort_values(['AAFREQ'], ascending=False)
 			for i in range(len(filtered_group.index) - 1):
