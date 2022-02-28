@@ -110,7 +110,7 @@ if __name__ == '__main__':
 	# Now for the actual complex mutations part!
 	for name,group in df.groupby(["gene","AAPOS"]):
 		# We don't want to bother with super low-frequency variants and indels
-		filtered_group = group.loc[group['AF'] >= 0.05]
+		filtered_group = group.loc[group['AAFREQ'] >= 0.05]
 		filtered_group = filtered_group.loc[group['AASUB']!= "-"]
 		filtered_group = filtered_group.loc[group['AASUB']!= "fs"]
 
@@ -171,6 +171,6 @@ if __name__ == '__main__':
 	#print(df[df['AAPOS']==144])
 
 	# Drop rows with empty values - happens with 3-nucleotide complex changes that have already been covered by the 2-nt case
-	df = df.dropna(subset=['Sample'])
+	df = df.dropna(subset=['SAMPLE'])
 
 	df.to_csv(output_variants_file, index=False)
