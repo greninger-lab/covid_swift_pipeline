@@ -98,8 +98,8 @@ if __name__ == '__main__':
 			# Here we protect against whole amino acid deletions, such as the spike 143-144 deletion
 			if "-" in group['AASUB'].unique():
 				group = group.sort_values(by=['VCOV'], ascending=False)
-				max_depth = max(group['Depth'])
-				real_depth = group[group['AASUB']=="-"]['Depth'].values[0]
+				max_depth = max(group['TCOV'])
+				real_depth = group[group['AASUB']=="-"]['TCOV'].values[0]
 				if real_depth == max_depth:
 					df = correct_deletions(df, group, real_depth)
 
