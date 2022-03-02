@@ -495,7 +495,7 @@ process PostProcessing {
             -fo ref.mask.fasta
         
         # If everything is below 6 coverage, just make an empty fasta
-        if grep -q "0$(printf '\t')29903" \${R1}.mask.bed; then
+        if grep -q "(printf '\t')0$(printf '\t')29903" \${R1}.mask.bed; then
             printf '>!{base}\n' > \${R1}_swift.fasta
             printf 'n%.0s' {1..29539} >> \${R1}_swift.fasta
         else
