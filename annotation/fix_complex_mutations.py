@@ -115,6 +115,10 @@ if __name__ == '__main__':
 		filtered_group = filtered_group.loc[group['AASUB']!= "fs"]
 		filtered_group = filtered_group.loc[~(filtered_group.AASUB.str.len()==1)]
 
+		filtered_group = filtered_group[filtered_group["snpid"].str.contains("ins")==False]
+		filtered_group = filtered_group[filtered_group["snpid"].str.contains("del")==False]
+		filtered_group = filtered_group[filtered_group["snpid"].str.contains("dup")==False]
+
 		if filtered_group.shape[0] > 1:
 			filtered_group = filtered_group.sort_values(['AAFREQ'], ascending=False)
 			for i in range(len(filtered_group.index) - 1):
