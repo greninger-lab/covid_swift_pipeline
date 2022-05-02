@@ -464,7 +464,7 @@ process PostProcessing {
         file FIX_COVERAGE
         file REFERENCE_FASTA_FAI
     output:
-        file("${base}_swift.fasta")
+        file("${base}_taylor.fasta")
         file("${base}_bcftools.vcf")
         file("${base}_pre_bcftools.vcf")
         file(INDEX_FILE)
@@ -496,8 +496,8 @@ process PostProcessing {
         
         # If everything is below 6 coverage, just make an empty fasta
         if grep -q "(printf '\t')0$(printf '\t')29903" \${R1}.mask.bed; then
-            printf '>!{base}\n' > \${R1}_swift.fasta
-            printf 'n%.0s' {1..29539} >> \${R1}_swift.fasta
+            printf '>!{base}\n' > \${R1}_taylor.fasta
+            printf 'n%.0s' {1..29539} >> \${R1}_taylor.fasta
         else
             # Align to Wuhan refseq and unwrap fasta
             cat ref.mask.fasta \${R1}.consensus.fa > align_input.fasta
@@ -509,20 +509,21 @@ process PostProcessing {
         fi
 
         # Find percent ns, doesn't work, fix later in python script
-        num_bases=$(grep -v ">" \${R1}_swift.fasta | wc | awk '{print $3-$1}')
-        num_ns=$(grep -v ">" \${R1}_swift.fasta | awk -F"n" '{print NF-1}')
+        num_bases=$(grep -v ">" \${R1}_taylor.fasta | wc | awk '{print $3-$1}')
+        num_ns=$(grep -v ">" \${R1}_taylor.fasta | awk -F"n" '{print NF-1}')
         percent_n=$(awk -v num_ns=$num_ns -v num_bases=$num_bases 'BEGIN { print ( num_ns * 100 / num_bases ) }')
         echo "num_bases=$num_bases"
         echo "num_ns=$num_ns"
         echo "percent_n=$percent_n"
-        gunzip \${R1}.vcf.gz
-        mv \${R1}.vcf \${R1}_bcftools.vcf
+        cp \${R1}.vcf.gz \${R1}_2.vcf.gz
+        gunzip \${R1}_2.vcf.gz
+        mv \${R1}_2.vcf \${R1}_bcftools.vcf
         #/usr/local/miniconda/bin/samtools view !{BAMFILE} -@ !{task.cpus} | awk -F: '$12 < 600' > \${R1}'.clipped.cleaned.bam'
     else
        echo "Empty bam detected. Generating empty consensus fasta file..."
        # Generate empty stats for empty bam
-       printf '>!{base}\n' > \${R1}_swift.fasta
-       printf 'n%.0s' {1..29539} >> \${R1}_swift.fasta
+       printf '>!{base}\n' > \${R1}_taylor.fasta
+       printf 'n%.0s' {1..29539} >> \${R1}_taylor.fasta
        percent_n=100
     fi
     
@@ -539,7 +540,7 @@ process PostProcessing {
         mv \${R1}_summary_fixed.csv \${R1}_summary.csv
     fi
 
-    [ -s \${R1}_swift.fasta ] || echo "WARNING: \${R1} produced blank output. Manual review may be needed."
+    [ -s \${R1}_taylor.fasta ] || echo "WARNING: \${R1} produced blank output. Manual review may be needed."
 
     '''
 }

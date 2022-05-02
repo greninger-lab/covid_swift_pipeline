@@ -12,7 +12,7 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	# Grabs name of file.
-	fasta_name = str(args.unwrap_fasta) + "_swift.fasta"
+	fasta_name = str(args.unwrap_fasta) + "_taylor.fasta"
 	new_fasta = open(fasta_name, "w")
 
 	# Grabs only the fasta we want (not the reference fasta),
