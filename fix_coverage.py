@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
 	line_num = 0
 	n_percent = 100
-	for line in open(str(args.sample_name) + "_swift.fasta"):
+	for line in open(str(args.sample_name) + "_taylor.fasta"):
 		if(line_num==1):
 			sequence = line
 			counter = sequence.lower().count('n')
