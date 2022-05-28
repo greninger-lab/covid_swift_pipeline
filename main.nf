@@ -26,6 +26,7 @@ def helpMessage() {
         --OUTDIR        Output directory. [REQUIRED]
         --PRIMERS       Primer masterfile to run. By default, this pipeline uses the Swift V2 primers.
                         This pipeline can also use QiaSeq and Artic v3 primers, specified by --PRIMERS qiaseq and --PRIMERS artic respectively.
+                        Artic versions can be further specified by artic_v3, artic_v4, or artic_v4.1.
         --SINGLE_END    Optional flag for single end reads. By default, this pipeline does 
                         paired-end reads.
         --NO_CLIPPING   Skip primerclip option.
@@ -90,15 +91,27 @@ if(params.NO_CLIPPING == false) {
     }
     else {
         if (params.PRIMERS.toUpperCase() == "QIASEQ") {
-            MASTERFILE = file("${baseDir}/sarscov2_qiaseq_masterfile.txt")
+            MASTERFILE = file("${baseDir}/masterfiles/sarscov2_qiaseq_masterfile.txt")
             println("Using QiaSeq primerset...")
         }
         else if (params.PRIMERS.toUpperCase() == "ARTIC") {
-            MASTERFILE = file("${baseDir}/sarscov2_artic_masterfile.txt")
-            println("Using Artic v3 primerset...")
+            MASTERFILE = file("${baseDir}/masterfiles/sarscov2_artic_v4.0_masterfile.txt")
+            println("Artic version not specified. Defaulting to Artic v4.0...")
+        }
+        else if (params.PRIMERS.toUpperCase() == "ARTIC_V3") {
+            MASTERFILE = file("${baseDir}/masterfiles/sarscov2_artic_v3_masterfile.txt")
+            println("Using Artic V3 primerset...")
+        }
+        else if (params.PRIMERS.toUpperCase() == "ARTIC_V4") {
+            MASTERFILE = file("${baseDir}/masterfiles/sarscov2_artic_v4.0_masterfile.txt")
+            println("Using Artic V4.0 primerset...")
+        }
+        else if (params.PRIMERS.toUpperCase() == "ARTIC_V4.1") {
+            MASTERFILE = file("${baseDir}/masterfiles/sarscov2_artic_v4.1_masterfile.txt")
+            println("Using Artic V4.1 primerset..")
         }
         else {
-            MASTERFILE = file("${baseDir}/sarscov2_swift_v2_masterfile.txt")
+            MASTERFILE = file("${baseDir}/masterfiles/sarscov2_swift_v2_masterfile.txt")
             println("Using Swift V2 primerset...")
         }
     }

@@ -15,7 +15,7 @@ This pipeline takes gzipped fastq files and outputs .bam files aligned to NC_045
 | --SINGLE_END | (Optional) Flag to indicate input reads are single end. By default this pipeline expects paired end reads.
 | --NO_CLIPPING | (Optional) Skip primerclip option for shotgun/CovidSeq runs.
 | --SGRNA_COUNT | (Optional) Add extra step to count sgRNAs.
-| --PRIMERS | (Optional) Specify which primerset to use (e.g. `--PRIMERS qiaseq`). Default: Swift v2. 
+| --PRIMERS | (Optional) Specify which primerset to use (e.g. `--PRIMERS qiaseq`). Default: Swift V2. Options: `qiaseq`, `artic_v3`, `artic_v4`, `artic_v4.1`.
 | --MIN_LEN | (Optional) Set minimum length for trimming. Default: 75.
 | -with-docker ubuntu:18.04 | __(Required)__ Runs command with Ubuntu docker.
 | -resume  | __(Recommended)__ nextflow will pick up where it left off if the previous command was interrupted for some reason.
