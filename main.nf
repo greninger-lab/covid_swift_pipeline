@@ -106,6 +106,7 @@ if(params.NO_CLIPPING == false) {
             MASTERFILE = file("${baseDir}/masterfiles/sarscov2_artic_v4.0_masterfile.txt")
             println("Using Artic V4.0 primerset...")
         }
+        // This primerset requires skipping of indels in bbmap...
         else if (params.PRIMERS.toUpperCase() == "ARTIC_V4.1") {
             MASTERFILE = file("${baseDir}/masterfiles/sarscov2_artic_v4.1_masterfile.txt")
             println("Using Artic V4.1 primerset..")
@@ -119,6 +120,19 @@ if(params.NO_CLIPPING == false) {
 else {
     MASTERFILE = file("${baseDir}/sarscov2_swift_v2_masterfile.txt")
     println("--NO_CLIPPING specified. Skipping primer clipping step...")
+}
+
+// By default, don't skip indels, but artic v4.1 requires it
+if (params.PRIMERS.toUpperCase() == "ARTIC_V4.1") {
+    params.BBMAP_INDEL_SKIP = "maxindel=80 strictmaxindel=t"
+    println("Artic V4.1 primerset requires limiting of indel length. Setting bbmap max indel length to 80...")
+}
+else if (params.PRIMERS.toUpperCase() == "ARTIC_V4") {
+    params.BBMAP_INDEL_SKIP = "maxindel=80 strictmaxindel=t"
+    println("Artic V4.0 primerset requires limiting of indel length. Setting bbmap max indel length to 80...")
+}
+else {
+    params.BBMAP_INDEL_SKIP = ""
 }
 
 // Print when using SGRNA_COUNT
@@ -203,7 +217,8 @@ workflow {
         )
         Aligning (
             Trimming.out[0],
-            REFERENCE_FASTA
+            REFERENCE_FASTA,
+            params.BBMAP_INDEL_SKIP
         )
         // Optional step for counting sgRNAs 
         if (params.SGRNA_COUNT != false) {
@@ -228,7 +243,8 @@ workflow {
         )
         Aligning (
             Trimming_SE.out[0],
-            REFERENCE_FASTA
+            REFERENCE_FASTA,
+            params.BBMAP_INDEL_SKIP
         )
         // Optional step for counting sgRNAs 
         if (params.SGRNA_COUNT != false) {

@@ -153,6 +153,7 @@ process Aligning {
     input: 
         tuple val(base), file("${base}.trimmed.fastq.gz"),file("${base}_summary.csv")
         file REFERENCE_FASTA
+        val BBMAP_INDEL_SKIP
     output:
         tuple val(base), file("${base}.bam"),file("${base}_summary2.csv") //into Aligned_bam_ch
         tuple val (base), file("*") //into Dump_ch
@@ -162,7 +163,7 @@ process Aligning {
     #!/bin/bash
 
     cat ${base}*.fastq.gz > ${base}_cat.fastq.gz
-    /usr/local/bin/bbmap.sh in=${base}_cat.fastq.gz outm=${base}.bam ref=${REFERENCE_FASTA} local=true -Xmx6g > bbmap_out.txt 2>&1
+    /usr/local/bin/bbmap.sh in=${base}_cat.fastq.gz outm=${base}.bam ref=${REFERENCE_FASTA} local=true ${BBMAP_INDEL_SKIP} -Xmx6g > bbmap_out.txt 2>&1
     reads_mapped=\$(cat bbmap_out.txt | grep "mapped:" | cut -d\$'\\t' -f3)
 
     cp ${base}_summary.csv ${base}_summary2.csv
