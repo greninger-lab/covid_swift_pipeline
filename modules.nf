@@ -16,8 +16,6 @@ process Trimming {
         tuple val(base), file(R1),file(R2),file("${base}.R1.paired.fastq.gz"), file("${base}.R2.paired.fastq.gz"),file("${base}.R1.unpaired.fastq.gz"), file("${base}.R2.unpaired.fastq.gz") //into Trim_out_ch2
         tuple val(base), file("${base}.trimmed.fastq.gz") //into Trim_out_ch3
 
-    publishDir "${params.OUTDIR}trimmed_fastqs", mode: 'copy',pattern:'*.trimmed.fastq*'
-
     script:
     """
     #!/bin/bash
