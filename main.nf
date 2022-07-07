@@ -122,14 +122,19 @@ else {
     println("--NO_CLIPPING specified. Skipping primer clipping step...")
 }
 
-// By default, don't skip indels, but artic v4.1 requires it
-if (params.PRIMERS.toUpperCase() == "ARTIC_V4.1") {
-    params.BBMAP_INDEL_SKIP = "maxindel=300 strictmaxindel=t"
-    println("Artic V4.1 primerset requires limiting of indel length. Setting bbmap max indel length to 300...")
-}
-else if (params.PRIMERS.toUpperCase() == "ARTIC_V4") {
-    params.BBMAP_INDEL_SKIP = "maxindel=300 strictmaxindel=t"
-    println("Artic V4.0 primerset requires limiting of indel length. Setting bbmap max indel length to 300...")
+if (params.PRIMERS != false) {
+    // By default, don't skip indels, but artic v4.1 requires it
+    if (params.PRIMERS.toUpperCase() == "ARTIC_V4.1") {
+        params.BBMAP_INDEL_SKIP = "maxindel=300 strictmaxindel=t"
+        println("Artic V4.1 primerset requires limiting of indel length. Setting bbmap max indel length to 300...")
+    }
+    else if (params.PRIMERS.toUpperCase() == "ARTIC_V4") {
+        params.BBMAP_INDEL_SKIP = "maxindel=300 strictmaxindel=t"
+        println("Artic V4.0 primerset requires limiting of indel length. Setting bbmap max indel length to 300...")
+    }
+    else {
+        params.BBMAP_INDEL_SKIP = ""
+    }
 }
 else {
     params.BBMAP_INDEL_SKIP = ""
