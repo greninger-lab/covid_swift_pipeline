@@ -142,7 +142,8 @@ process Fastqc_SE {
 // Align fastq files to Wuhan refseq using bbmap
 process Aligning {
     // container "quay.io/biocontainers/bbmap:38.86--h1296035_0"
-    container "quay.io/biocontainers/bwa:0.7.17--hed695b0_7"
+    // container "quay.io/biocontainers/bwa:0.7.17--hed695b0_7"
+    container "dukegcb/bwa-samtools"
 
     // Retry on fail at most three times 
     errorStrategy 'retry'
@@ -162,7 +163,7 @@ process Aligning {
     cat ${base}*.fastq.gz > ${base}_cat.fastq.gz
     /usr/local/bin/bwa index ${REFERENCE_FASTA}
     /usr/local/bin/bwa mem -t ${task.cpus} NC_045512.2.fasta ${base}_cat.fastq.gz > ${base}.bam
-    reads_mapped=NA
+    reads_mapped=\$(samtools view -c -F 260 ${base}.bam)
 
     cp ${base}_summary.csv ${base}_summary2.csv
     printf ",\$reads_mapped" >> ${base}_summary2.csv
