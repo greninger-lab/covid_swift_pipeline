@@ -38,7 +38,7 @@ process GeneratePileup {
                 -f !{REFERENCE_FASTA} -r {} -aa -Q 0 \\
                 --no-BAQ \\
                 --count-orphans \\
-                -d 0 \\
+                -d 5000 \\
             !{BAMFILE} > tmp.{}.pileup"
     
     mv tmp.NC_045512.2\\:1-* \${R1}_catted.pileup
