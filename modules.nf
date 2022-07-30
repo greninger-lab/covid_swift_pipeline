@@ -70,7 +70,7 @@ process IvarConsensus {
     pileupsize=$(($(wc -c !{PILEUP} | awk '{print $1'})+0))
     if (( $pileupsize > 92 ))
     then
-        cat !{PILEUP} | /usr/local/bin/ivar consensus -p !{base} -n N -m 50 -t 0.75 -i !{base}
+        cat !{PILEUP} | /usr/local/bin/ivar consensus -p !{base} -n N -m 50 -t 0.25 -i !{base}
         cp !{base}.fa !{base}_taylor.fasta
     else
        printf '>!{base}\n' > !{base}_taylor.fasta
