@@ -69,10 +69,10 @@ if (!params.OUTDIR.endsWith("/")){
 }
 
 // Setting up files 
-REFERENCE_FASTA = file("${baseDir}/NC_045512.2.fasta")
-REFERENCE_FASTA_FAI = file("${baseDir}/NC_045512.2.fasta.fai")
-VCFUTILS=file("${baseDir}/vcfutils.pl")
-SPLITCHR=file("${baseDir}/splitchr.txt")
+// REFERENCE_FASTA = file("${baseDir}/NC_045512.2.fasta")
+// REFERENCE_FASTA_FAI = file("${baseDir}/NC_045512.2.fasta.fai")
+// VCFUTILS=file("${baseDir}/vcfutils.pl")
+// SPLITCHR=file("${baseDir}/splitchr.txt")
 // FIX_COVERAGE = file("${baseDir}/fix_coverage.py")
 // PROTEINS = file("${baseDir}/NC_045512_proteins.txt")
 // AT_REFGENE = file("${baseDir}/annotation/AT_refGene.txt")
@@ -90,7 +90,6 @@ SPLITCHR=file("${baseDir}/splitchr.txt")
 // FIX_COMPLEX_MUTATIONS = file("${baseDir}/annotation/fix_complex_mutations.py")
 
 // Import processes 
-include { GeneratePileup } from './modules.nf'
 include { IvarConsensus } from './modules.nf'
 
 // Import bams from input folder
@@ -107,14 +106,7 @@ input_read_ch = Channel
 ////////////////////////////////////////////////////////
 
 workflow {
-    GeneratePileup (
-        input_read_ch,
-        REFERENCE_FASTA,
-        VCFUTILS,
-        REFERENCE_FASTA_FAI,
-        SPLITCHR
-    )
     IvarConsensus (
-        GeneratePileup.out[0]
+        input_read_ch
     )
 }
