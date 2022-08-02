@@ -94,6 +94,10 @@ if(params.NO_CLIPPING == false) {
             MASTERFILE = file("${baseDir}/masterfiles/sarscov2_qiaseq_masterfile.txt")
             println("Using QiaSeq primerset...")
         }
+        else if (params.PRIMERS.toUpperCase() == "QIASEQ_BOOSTER") {
+            MASTERFILE = file("${baseDir}/masterfiles/sarscov2_qiaseq_booster_masterfile.txt")
+            println("Using QiaSeq Direct with Booster A primerset...")
+        }
         else if (params.PRIMERS.toUpperCase() == "ARTIC") {
             MASTERFILE = file("${baseDir}/masterfiles/sarscov2_artic_v4.0_masterfile.txt")
             println("Artic version not specified. Defaulting to Artic v4.0...")
