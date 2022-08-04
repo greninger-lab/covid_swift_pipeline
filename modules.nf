@@ -18,7 +18,7 @@ process IvarConsensus {
     #!/bin/bash
     
     base=$(echo !{BAMFILE} | cut -d. -f1)
-    samtools mpileup -d 5000 -A -Q 0 !{BAMFILE} | ivar consensus -p ${base} -n 'N' -m 50 -t 0.25 -i ${base}
+    samtools mpileup -d 5000 -A -Q 0 !{BAMFILE} | ivar consensus -p ${base} -n 'N' -m 50 -t 0.2 -i ${base}
     cp ${base}.fa ${base}_taylor.fasta
 
     '''
