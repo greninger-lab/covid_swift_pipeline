@@ -10,7 +10,6 @@ https://github.com/greninger-lab/covid_swift_pipeline
 */
 
 // Using the Nextflow DSL-2 to account for the logic flow of this workflow
-nextflow.preview.dsl=2
 
 // Print help message
 def helpMessage() {
@@ -34,6 +33,14 @@ def helpMessage() {
 /*                                                    */
 ////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////
+
+// Check Nextflow version for enabling DSL2
+nextflow_dsl2_v = '20.07.1'
+if ( nextflow.version.matches(">= $nextflow_dsl2_v") ) {
+    nextflow.enable.dsl=2
+} else {
+    nextflow.preview.dsl=2
+}
 
 // Show help message
 params.help = false
@@ -67,27 +74,6 @@ if (!params.OUTDIR.endsWith("/")){
    println("Make sure your output directory ends with trailing slash.")
    exit(1)
 }
-
-// Setting up files 
-// REFERENCE_FASTA = file("${baseDir}/NC_045512.2.fasta")
-// REFERENCE_FASTA_FAI = file("${baseDir}/NC_045512.2.fasta.fai")
-// VCFUTILS=file("${baseDir}/vcfutils.pl")
-// SPLITCHR=file("${baseDir}/splitchr.txt")
-// FIX_COVERAGE = file("${baseDir}/fix_coverage.py")
-// PROTEINS = file("${baseDir}/NC_045512_proteins.txt")
-// AT_REFGENE = file("${baseDir}/annotation/AT_refGene.txt")
-// AT_REFGENE_MRNA = file("${baseDir}/annotation/AT_refGeneMrna.fa")
-// LAVA_GFF = file("${baseDir}/annotation/lava_ref.gff")
-// MAT_PEPTIDES = file("${baseDir}/annotation/mat_peptides.txt")
-// MAT_PEPTIDE_ADDITION = file("${baseDir}/annotation/mat_peptide_addition.py")
-// RIBOSOMAL_START = file("${baseDir}/annotation/ribosomal_start.txt")
-// RIBOSOMAL_SLIPPAGE = file("${baseDir}/annotation/ribosomal_slippage.py")
-// PROTEINS = file("${baseDir}/annotation/proteins.csv")
-// CORRECT_AF = file("${baseDir}/annotation/correct_AF.py")
-// CORRECT_AF_BCFTOOLS = file("${baseDir}/annotation/correct_AF_bcftools.py")
-// SGRNAS = file("${baseDir}/sgRNAs_60.fasta")
-// FULL_SGRNAS=file("${baseDir}/sgRNAs.fasta")
-// FIX_COMPLEX_MUTATIONS = file("${baseDir}/annotation/fix_complex_mutations.py")
 
 // Import processes 
 include { IvarConsensus } from './modules.nf'
