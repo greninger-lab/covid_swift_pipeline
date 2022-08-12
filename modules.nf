@@ -1,7 +1,5 @@
 process IvarConsensus {
-    container "greningerlab/revica:latest"
-
-    // Retry on fail at most three times 
+    container "quay.io/biocontainers/ivar:1.3.1--hecb563c_3"
     errorStrategy 'retry'
     maxRetries 2
 
@@ -9,7 +7,7 @@ process IvarConsensus {
         file(BAMFILE)
 
     output:
-        tuple file("*_taylor.fasta")
+        file("*_taylor.fasta")
     
     publishDir params.OUTDIR, mode: 'copy', pattern: '*.fasta'
 

@@ -20,8 +20,8 @@ def helpMessage() {
     Parameters:
         --INPUT         Input folder where all bams to redo are located. [REQUIRED]
         --OUTDIR        Output directory. [REQUIRED]
-        -with-docker ubuntu:18.04   [REQUIRED]
-        -resume [RECOMMENDED]
+        -with-docker    ubuntu:18.04   [REQUIRED]
+        -resume         [RECOMMENDED]
         -profile        Specify which profile to run. For AWS, run with -profile cloud_big. For large memory-intensive runs on AWS, run with -profile cloud_bigger.
         
     """.stripIndent()
