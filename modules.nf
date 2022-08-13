@@ -7,15 +7,21 @@ process IvarConsensus {
         file(BAMFILE)
 
     output:
-        file("*_taylor.fasta")
+        tuple file("*_taylor.fasta"), file("*.bed")
     
-    publishDir params.OUTDIR, mode: 'copy', pattern: '*.fasta'
+    publishDir "${params.OUTDIR}ivar_consensus", mode: 'copy', pattern: '*.fasta'
+    publishDir "${params.OUTDIR}coverage_bed", mode: 'copy', pattern: '*.bed'
 
     shell:
     '''
     #!/bin/bash
     
     base=$(echo !{BAMFILE} | cut -d. -f1)
+    
+    # generate coverage bed file
+    samtools depth -a -H !{BAMFILE} -o ${base}.bed
+
+    # call consensus genome 
     samtools mpileup -d 5000 -A -Q 0 !{BAMFILE} | ivar consensus -p ${base} -n 'N' -m 50 -t 0.2 -i ${base}
     cp ${base}.fa ${base}_taylor.fasta
 
