@@ -10,7 +10,13 @@ https://github.com/greninger-lab/covid_swift_pipeline
 */
 
 // Using the Nextflow DSL-2 to account for the logic flow of this workflow
-nextflow.preview.dsl=2
+// Syntax based on nextflow verison
+nextflow_dsl2_v = '20.07.1'
+if ( nextflow.version.matches(">= $nextflow_dsl2_v") ) {
+    nextflow.enable.dsl=2
+} else {
+    nextflow.preview.dsl=2
+}
 
 // Print help message
 def helpMessage() {
@@ -160,6 +166,7 @@ FIX_COMPLEX_MUTATIONS = file("${baseDir}/annotation/fix_complex_mutations.py")
 include { Trimming } from './modules.nf'
 include { Fastqc } from './modules.nf'
 include { Aligning } from './modules.nf'
+include { Aligning_SE } from './modules.nf'
 include { Trimming_SE } from './modules.nf' 
 include { Fastqc_SE } from './modules.nf'
 include { CountSubgenomicRNAs } from './modules.nf'
@@ -206,10 +213,12 @@ workflow {
         Fastqc (
             Trimming.out[1]
         )
+        ch_alignment=Channel.empty()
         Aligning (
             Trimming.out[0],
             REFERENCE_FASTA
         )
+        ch_alignment=Aligning.out[0]
         // Optional step for counting sgRNAs 
         if (params.SGRNA_COUNT != false) {
             CountSubgenomicRNAs (
@@ -231,10 +240,12 @@ workflow {
         Fastqc_SE (
             Trimming_SE.out[1]
         )
-        Aligning (
+        ch_alignment=Channel.empty()
+        Aligning_SE (
             Trimming_SE.out[0],
             REFERENCE_FASTA
         )
+        ch_alignment=Aligning_SE.out[0]
         // Optional step for counting sgRNAs 
         if (params.SGRNA_COUNT != false) {
             CountSubgenomicRNAs (
@@ -248,10 +259,11 @@ workflow {
         }
     }
 
+    
     // Primerclip options for Swift runs
     if(params.NO_CLIPPING == false) {
         NameSorting (
-            Aligning.out[0]
+            ch_alignment
         )
         Clipping (
             NameSorting.out[0],
@@ -267,7 +279,7 @@ workflow {
     } else {
     // Skip primerclip for non-Swift runs
         BamSorting (
-            Aligning.out[0]
+            ch_alignment
         )
         
         GenerateVcf (

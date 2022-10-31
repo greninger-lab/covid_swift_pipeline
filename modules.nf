@@ -1,6 +1,7 @@
 // Use Trimmomatic to trim files, above Q20, minlen of 75
 // Initialize summary file and input trimming stats into summary file
 process Trimming { 
+    // PE Trimming
     container "quay.io/biocontainers/trimmomatic:0.35--6"
 
     // Retry on fail at most three times 
@@ -12,9 +13,9 @@ process Trimming {
         file ADAPTERS
         val MINLEN
     output: 
-        tuple val(base), file("${base}.trimmed.fastq.gz"),file("${base}_summary.csv") //into Trim_out_ch
+        tuple val(base), file("${base}.R1.paired.fastq.gz"), file("${base}.R2.paired.fastq.gz"), file("${base}_summary.csv") //into Trim_out_ch
         tuple val(base), file(R1),file(R2),file("${base}.R1.paired.fastq.gz"), file("${base}.R2.paired.fastq.gz"),file("${base}.R1.unpaired.fastq.gz"), file("${base}.R2.unpaired.fastq.gz") //into Trim_out_ch2
-        tuple val(base), file("${base}.trimmed.fastq.gz") //into Trim_out_ch3
+        tuple val(base), file("${base}.R1.paired.fastq.gz"), file("${base}.R2.paired.fastq.gz") //into Trim_out_ch3
 
     script:
     """
@@ -41,8 +42,6 @@ process Trimming {
     
     echo Sample_Name,Raw_Reads,Trimmed_Paired_Reads,Trimmed_Unpaired_Reads,Total_Trimmed_Reads,Percent_Trimmed,Mapped_Reads,Clipped_Mapped_Reads,Mean_Coverage,Spike_Mean_Coverage,Spike_100X_Cov_Percentage,Spike_200X_Cov_Percentage,Lowest_Spike_Cov,Percent_N > ${base}_summary.csv
     printf "${base},\$num_untrimmed,\$num_paired,\$num_unpaired,\$num_trimmed,\$percent_trimmed" >> ${base}_summary.csv
-
-    cat *paired.fastq.gz > ${base}.trimmed.fastq.gz
     
     """
 }
@@ -101,7 +100,7 @@ process Trimming_SE {
 
     echo \$base
 
-    trimmomatic SE -threads ${task.cpus} ${R1} \$base.trimmed.fastq.gz \
+    trimmomatic SE -threads ${task.cpus} ${R1} \${base}.trimmed.fastq.gz \
     ILLUMINACLIP:${ADAPTERS}:2:30:10:1:true LEADING:3 TRAILING:3 SLIDINGWINDOW:4:20 MINLEN:${MINLEN}
 
     num_untrimmed=\$((\$(gunzip -c ${R1} | wc -l)/4))
@@ -139,8 +138,39 @@ process Fastqc_SE {
     """
 }
 
-// Align fastq files to Wuhan refseq using bbmap
+// Align fastq files to Wuhan refseq using bwa
 process Aligning {
+    // container "quay.io/biocontainers/bbmap:38.86--h1296035_0"
+    // container "quay.io/biocontainers/bwa:0.7.17--hed695b0_7"
+    container "dukegcb/bwa-samtools"
+
+    // Retry on fail at most three times 
+    errorStrategy 'retry'
+    maxRetries 3
+
+    input: 
+        tuple val(base), file("${base}.R1.paired.fastq.gz"), file("${base}.R2.paired.fastq.gz"), file("${base}_summary.csv")
+        file REFERENCE_FASTA
+    output:
+        tuple val(base), file("${base}.bam"),file("${base}_summary2.csv") //into Aligned_bam_ch
+        tuple val (base), file("*") //into Dump_ch
+
+    script:
+    """
+    #!/bin/bash
+
+    /usr/local/bin/bwa index ${REFERENCE_FASTA}
+    /usr/local/bin/bwa mem -t ${task.cpus} NC_045512.2.fasta ${base}.R1.paired.fastq.gz ${base}.R2.paired.fastq.gz > ${base}.bam
+    reads_mapped=\$(samtools view -c -F 260 ${base}.bam)
+
+    cp ${base}_summary.csv ${base}_summary2.csv
+    printf ",\$reads_mapped" >> ${base}_summary2.csv
+
+    """
+}
+
+// Align fastq files to Wuhan refseq using bwa
+process Aligning_SE {
     // container "quay.io/biocontainers/bbmap:38.86--h1296035_0"
     // container "quay.io/biocontainers/bwa:0.7.17--hed695b0_7"
     container "dukegcb/bwa-samtools"
@@ -159,10 +189,8 @@ process Aligning {
     script:
     """
     #!/bin/bash
-
-    cat ${base}*.fastq.gz > ${base}_cat.fastq.gz
     /usr/local/bin/bwa index ${REFERENCE_FASTA}
-    /usr/local/bin/bwa mem -t ${task.cpus} NC_045512.2.fasta ${base}_cat.fastq.gz > ${base}.bam
+    /usr/local/bin/bwa mem -t ${task.cpus} NC_045512.2.fasta ${base}.trimmed.fastq.gz > ${base}.bam
     reads_mapped=\$(samtools view -c -F 260 ${base}.bam)
 
     cp ${base}_summary.csv ${base}_summary2.csv
