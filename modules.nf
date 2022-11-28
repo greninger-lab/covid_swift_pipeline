@@ -160,7 +160,7 @@ process Aligning {
     #!/bin/bash
 
     /usr/local/bin/bwa index ${REFERENCE_FASTA}
-    /usr/local/bin/bwa mem -t ${task.cpus} NC_045512.2.fasta ${base}.R1.paired.fastq.gz ${base}.R2.paired.fastq.gz | samtools view -b -F 4 - > ${base}.bam
+    /usr/local/bin/bwa mem -t ${task.cpus} NC_045512.2.fasta ${base}.R1.paired.fastq.gz ${base}.R2.paired.fastq.gz | samtools view -@ ${task.cpus} -b -F 4 - > ${base}.bam
     reads_mapped=\$(samtools view -c ${base}.bam)
 
     cp ${base}_summary.csv ${base}_summary2.csv
@@ -190,7 +190,7 @@ process Aligning_SE {
     """
     #!/bin/bash
     /usr/local/bin/bwa index ${REFERENCE_FASTA}
-    /usr/local/bin/bwa mem -t ${task.cpus} NC_045512.2.fasta ${base}.trimmed.fastq.gz | samtools view -b -F 4 - > ${base}.bam
+    /usr/local/bin/bwa mem -t ${task.cpus} NC_045512.2.fasta ${base}.trimmed.fastq.gz | samtools view -@ ${task.cpus} -b -F 4 - > ${base}.bam
     # retain only mapped reads
     reads_mapped=\$(samtools view -c ${base}.bam)
 
