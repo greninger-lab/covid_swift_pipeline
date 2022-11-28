@@ -160,8 +160,8 @@ process Aligning {
     #!/bin/bash
 
     /usr/local/bin/bwa index ${REFERENCE_FASTA}
-    /usr/local/bin/bwa mem -t ${task.cpus} NC_045512.2.fasta ${base}.R1.paired.fastq.gz ${base}.R2.paired.fastq.gz > ${base}.bam
-    reads_mapped=\$(samtools view -c -F 260 ${base}.bam)
+    /usr/local/bin/bwa mem -t ${task.cpus} NC_045512.2.fasta ${base}.R1.paired.fastq.gz ${base}.R2.paired.fastq.gz | samtools view -@ ${task.cpus} -b -F 4 - > ${base}.bam
+    reads_mapped=\$(samtools view -c ${base}.bam)
 
     cp ${base}_summary.csv ${base}_summary2.csv
     printf ",\$reads_mapped" >> ${base}_summary2.csv
@@ -190,8 +190,8 @@ process Aligning_SE {
     """
     #!/bin/bash
     /usr/local/bin/bwa index ${REFERENCE_FASTA}
-    /usr/local/bin/bwa mem -t ${task.cpus} NC_045512.2.fasta ${base}.trimmed.fastq.gz > ${base}.bam
-    reads_mapped=\$(samtools view -c -F 260 ${base}.bam)
+    /usr/local/bin/bwa mem -t ${task.cpus} NC_045512.2.fasta ${base}.trimmed.fastq.gz | samtools view -@ ${task.cpus} -b -F 4 - > ${base}.bam
+    reads_mapped=\$(samtools view -c ${base}.bam)
 
     cp ${base}_summary.csv ${base}_summary2.csv
     printf ",\$reads_mapped" >> ${base}_summary2.csv
@@ -300,7 +300,8 @@ process Clipping {
         #/usr/local/miniconda/bin/samtools sort -@ ${task.cpus} -n -O sam ${base}.clipped.sam > ${base}.clipped.sorted.sam
         #/usr/local/miniconda/bin/samtools view -@ ${task.cpus} -Sb ${base}.clipped.sorted.sam > ${base}.clipped.unsorted.bam
         #/usr/local/miniconda/bin/samtools sort -@ ${task.cpus} -o ${base}.clipped.unsorted.bam ${base}.clipped.bam
-        /usr/local/miniconda/bin/samtools sort -@ ${task.cpus} ${base}.clipped.sam -o ${base}.clipped.bam
+        /usr/local/miniconda/bin/samtools view -@ ${task.cpus} -Sb -F 4 -o ${base}_mapped.clipped.bam ${base}.clipped.bam
+        /usr/local/miniconda/bin/samtools sort -@ ${task.cpus} -o ${base}.clipped.bam ${base}_mapped.clipped.sam
         /usr/local/miniconda/bin/samtools index ${base}.clipped.bam
         clipped_reads=\$(/usr/local/miniconda/bin/samtools flagstat ${base}.clipped.bam | grep "mapped (" | awk '{print \$1}')
         echo "clipped reads: \$clipped_reads"
