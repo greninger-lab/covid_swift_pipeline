@@ -10,7 +10,12 @@ https://github.com/greninger-lab/covid_swift_pipeline
 */
 
 // Using the Nextflow DSL-2 to account for the logic flow of this workflow
-nextflow.preview.dsl=2
+nextflow_dsl2_v='20.07.1'
+if ( nextflow.version.matches(">=$nextflow_dsl2_v") ) {
+    nextflow.enable.dsl=2
+} else {
+    nextflow.preview.d2l=2
+}
 
 // Print help message
 def helpMessage() {

@@ -271,7 +271,8 @@ process Clipping {
         #/usr/local/miniconda/bin/samtools sort -@ ${task.cpus} -n -O sam ${base}.clipped.sam > ${base}.clipped.sorted.sam
         #/usr/local/miniconda/bin/samtools view -@ ${task.cpus} -Sb ${base}.clipped.sorted.sam > ${base}.clipped.unsorted.bam
         #/usr/local/miniconda/bin/samtools sort -@ ${task.cpus} -o ${base}.clipped.unsorted.bam ${base}.clipped.bam
-        /usr/local/miniconda/bin/samtools sort -@ ${task.cpus} ${base}.clipped.sam -o ${base}.clipped.bam
+        /usr/local/miniconda/bin/samtools view -@ ${task.cpus} -Sb -F 4 -o ${base}_mapped.clipped.bam ${base}.clipped.sam
+        /usr/local/miniconda/bin/samtools sort -@ ${task.cpus} -o ${base}.clipped.bam ${base}_mapped.clipped.bam
         /usr/local/miniconda/bin/samtools index ${base}.clipped.bam
         clipped_reads=\$(/usr/local/miniconda/bin/samtools flagstat ${base}.clipped.bam | grep "mapped (" | awk '{print \$1}')
         echo "clipped reads: \$clipped_reads"
