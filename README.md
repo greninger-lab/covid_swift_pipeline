@@ -17,6 +17,7 @@ This pipeline takes gzipped fastq files and outputs .bam files aligned to NC_045
 | --SGRNA_COUNT | (Optional) Add extra step to count sgRNAs.
 | --PRIMERS | (Optional) Specify which primerset to use (e.g. `--PRIMERS qiaseq`). Default: Swift V2. Options: `qiaseq`, `artic_v3`, `artic_v4`, `artic_v4.1`.
 | --MIN_LEN | (Optional) Set minimum length for trimming. Default: 75.
+| --DOWNSAMPLE | (Optional) Downsample to a number or a fraction of reads using seqtk. 
 | -with-docker ubuntu:18.04 | __(Required)__ Runs command with Ubuntu docker.
 | -resume  | __(Recommended)__ nextflow will pick up where it left off if the previous command was interrupted for some reason.
 | -with-trace | __(Recommended)__ Outputs a trace.txt that shows which processes end up in which work/ directories. 
