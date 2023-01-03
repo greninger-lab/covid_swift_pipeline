@@ -37,6 +37,7 @@ def helpMessage() {
         --NO_CLIPPING   Skip primerclip option.
         --SGRNA_COUNT   Add extra step to count sgRNAs. 
         --MIN_LEN       Set minimum length for Trimmomatic. Default is 75.
+        --DOWNSAMPLE    Downsample to a number or a fraction of reads using seqtk
         -with-docker ubuntu:18.04   [REQUIRED]
         -resume [RECOMMENDED]
         -profile        Specify which profile to run. For AWS, run with -profile cloud_big. For large memory-intensive runs on AWS, run with -profile cloud_bigger.
@@ -67,6 +68,7 @@ params.PRIMERS = false
 params.SGRNA_COUNT = false
 params.NO_CLIPPING = false
 params.MIN_LEN = 75
+params.DOWNSAMPLE = false
 
 // Checking for argument validity
 // Throw error if --INPUT not set
@@ -176,9 +178,11 @@ FULL_SGRNAS=file("${baseDir}/sgRNAs.fasta")
 FIX_COMPLEX_MUTATIONS = file("${baseDir}/annotation/fix_complex_mutations.py")
 
 // Import processes 
+include { Downsampling } from './modules.nf'
 include { Trimming } from './modules.nf'
 include { Fastqc } from './modules.nf'
 include { Aligning } from './modules.nf'
+include { Downsampling_SE } from './modules.nf'
 include { Trimming_SE } from './modules.nf' 
 include { Fastqc_SE } from './modules.nf'
 include { CountSubgenomicRNAs } from './modules.nf'
@@ -217,8 +221,19 @@ if(params.SINGLE_END == false) {
 workflow {
     // Paired end first few steps
     if(params.SINGLE_END == false) {
+        
+        if(params.DOWNSAMPLE != false) {
+            Downsampling (
+                input_read_ch,
+                params.DOWNSAMPLE
+            )
+            fastq_ch = Downsampling.out[0]
+        } else {
+            fastq_ch = input_read_ch
+        }
+        
         Trimming (
-            input_read_ch, 
+            fastq_ch, 
             ADAPTERS,
             params.MIN_LEN
         )
@@ -243,8 +258,19 @@ workflow {
         }
     } else {
     // Single end first few steps
+        
+        if(params.DOWNSAMPLE != false) {
+            Downsampling_SE (
+                input_read_ch,
+                params.DOWNSAMPLE
+            )
+            fastq_ch = Downsampling_SE.out[0]
+        } else {
+            fastq_ch = input_read_ch
+        }
+
         Trimming_SE (
-            input_read_ch,
+            fastq_ch,
             ADAPTERS,
             params.MIN_LEN
         )
