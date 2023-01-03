@@ -1,3 +1,47 @@
+process Downsampling {
+    container "quay.io/biocontainers/seqtk:1.3--hed695b0_2"
+
+    errorStrategy 'retry'
+    maxRetries 2
+
+    input:
+        tuple val(base), file(R1), file(R2)
+        val downsample_val 
+
+    output:
+        tuple val(base), file("*_R1_sampled.fastq.gz"), file("*_R2_sampled.fastq.gz")
+
+    script:
+    """
+    #!/bin/bash
+
+    seqtk sample -s 100 ${R1} ${downsample_val} | gzip > ${base}_R1_sampled.fastq.gz
+    seqtk sample -s 100 ${R2} ${downsample_val} | gzip > ${base}_R2_sampled.fastq.gz 
+    """
+}
+
+process Downsampling_SE {
+    container "quay.io/biocontainers/seqtk:1.3--hed695b0_2"
+
+    errorStrategy 'retry'
+    maxRetries 2
+    
+    input:
+        file R1
+        val downsample_val
+
+    output:
+        file("*_R1_sampled.fastq.gz")
+
+    script:
+    """
+    #!/bin/bash
+
+    base=\$(echo ${R1} | awk -F'_R1' '{print \$1}')  
+    seqtk sample ${R1} ${downsample_val} | gzip > \${base}_R1_sampled.fastq.gz
+    """
+}
+
 // Use Trimmomatic to trim files, above Q20, minlen of 75
 // Initialize summary file and input trimming stats into summary file
 process Trimming { 
