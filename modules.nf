@@ -1,5 +1,5 @@
 process Downsampling {
-    container "quay.io/biocontainers/seqtk:1.3--hed695b0_2"
+    container "quay.io/biocontainers/bbmap:38.86--h1296035_0"
 
     errorStrategy 'retry'
     maxRetries 2
@@ -15,13 +15,17 @@ process Downsampling {
     """
     #!/bin/bash
 
-    seqtk sample -s 100 ${R1} ${downsample_val} | gzip > ${base}_R1_sampled.fastq.gz
-    seqtk sample -s 100 ${R2} ${downsample_val} | gzip > ${base}_R2_sampled.fastq.gz 
+    if [[ ${downsample_val} < 1 && ${downsample_val} > 0 ]]
+    then
+        reformat.sh in=${R1} in2=${R2} samplerate=${downsample_val} sampleseed=100 out=${base}_R1_sampled.fastq.gz out2=${base}_R2_sampled.fastq.gz
+    else
+        reformat.sh in=${R1} in2=${R2} reads=${downsample_val} sampleseed=100 out=${base}_R1_sampled.fastq.gz out2=${base}_R2_sampled.fastq.gz
+    fi
     """
 }
 
 process Downsampling_SE {
-    container "quay.io/biocontainers/seqtk:1.3--hed695b0_2"
+    container "quay.io/biocontainers/bbmap:38.86--h1296035_0" 
 
     errorStrategy 'retry'
     maxRetries 2
@@ -38,7 +42,13 @@ process Downsampling_SE {
     #!/bin/bash
 
     base=\$(echo ${R1} | awk -F'_R1' '{print \$1}')  
-    seqtk sample ${R1} ${downsample_val} | gzip > \${base}_R1_sampled.fastq.gz
+
+    if [[ ${downsample_val} < 1 && ${downsample_val} > 0 ]]
+    then
+        reformat.sh in=${R1} samplerate=${downsample_val} sampleseed=100 out=\${base}_R1_sampled.fastq.gz
+    else
+        reformat.sh in=${R1} reads=${downsample_val} sampleseed=100 out=\${base}_R1_sampled.fastq.gz
+    fi
     """
 }
 

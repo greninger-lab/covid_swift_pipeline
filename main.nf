@@ -221,19 +221,19 @@ if(params.SINGLE_END == false) {
 workflow {
     // Paired end first few steps
     if(params.SINGLE_END == false) {
-        
+
         if(params.DOWNSAMPLE != false) {
             Downsampling (
                 input_read_ch,
                 params.DOWNSAMPLE
             )
-            fastq_ch = Downsampling.out[0]
+            trimming_fastq_ch = Downsampling.out[0]
         } else {
-            fastq_ch = input_read_ch
+            trimming_fastq_ch = input_read_ch
         }
         
         Trimming (
-            fastq_ch, 
+            trimming_fastq_ch, 
             ADAPTERS,
             params.MIN_LEN
         )
@@ -258,19 +258,19 @@ workflow {
         }
     } else {
     // Single end first few steps
-        
+ 
         if(params.DOWNSAMPLE != false) {
             Downsampling_SE (
                 input_read_ch,
                 params.DOWNSAMPLE
             )
-            fastq_ch = Downsampling_SE.out[0]
+            trimming_fastq_ch = Downsampling_SE.out[0]
         } else {
-            fastq_ch = input_read_ch
+            trimming_fastq_ch = input_read_ch
         }
 
         Trimming_SE (
-            fastq_ch,
+            trimming_fastq_ch,
             ADAPTERS,
             params.MIN_LEN
         )
