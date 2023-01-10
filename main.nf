@@ -226,13 +226,13 @@ workflow {
                 input_read_ch,
                 params.DOWNSAMPLE
             )
-            fastq_ch = Downsampling.out[0]
+            trimming_fastq_ch = Downsampling.out[0]
         } else {
-            fastq_ch = input_read_ch
+            trimming_fastq_ch = input_read_ch
         }
 
         Trimming (
-            fastq_ch,
+            trimming_fastq_ch,
             ADAPTERS,
             params.MIN_LEN
         )
@@ -262,13 +262,13 @@ workflow {
                 input_read_ch,
                 params.DOWNSAMPLE
             )
-            fastq_ch = Downsampling_SE.out[0]
+            trimming_fastq_ch = Downsampling_SE.out[0]
         } else {
-            fastq_ch = input_read_ch
+            trimming_fastq_ch = input_read_ch
         }
 
         Trimming_SE (
-            fastq_ch,
+            trimming_fastq_ch,
             ADAPTERS,
             params.MIN_LEN
         )
