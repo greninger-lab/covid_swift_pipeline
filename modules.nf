@@ -56,7 +56,7 @@ process Downsampling_SE {
 // Initialize summary file and input trimming stats into summary file
 
 process Trimming { 
-    container "quay.io/biocontainers/trimmomatic:0.35--6"
+    container "quay.io/biocontainers/trimmomatic:0.39--hdfd78af_2"
 
     // Retry on fail at most three times 
     errorStrategy 'retry'
@@ -130,7 +130,7 @@ process Fastqc {
 // Use Trimmomatic to trim files, above Q20, minlen of 75
 // Initialize summary file and input trimming stats into summary file
 process Trimming_SE { 
-    container "quay.io/biocontainers/trimmomatic:0.35--6"
+    container "quay.io/biocontainers/trimmomatic:0.39--hdfd78af_2"
 
     // Retry on fail at most three times 
     errorStrategy 'retry'
