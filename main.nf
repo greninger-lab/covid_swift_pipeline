@@ -32,7 +32,7 @@ def helpMessage() {
         --OUTDIR        Output directory. [REQUIRED]
         --PRIMERS       Primer masterfile to run. By default, this pipeline uses the Swift V2 primers.
                         This pipeline can also use QiaSeq and Artic v3 primers, specified by --PRIMERS qiaseq and --PRIMERS artic respectively.
-                        Artic versions can be further specified by artic_v3, artic_v4, or artic_v4.1.
+                        Artic versions can be further specified by artic_v3, artic_v4, artic_v4.1, or artic_v5.3.2
         --SINGLE_END    Optional flag for single end reads. By default, this pipeline does 
                         paired-end reads.
         --NO_CLIPPING   Skip primerclip option.
@@ -122,6 +122,10 @@ if(params.NO_CLIPPING == false) {
         else if (params.PRIMERS.toUpperCase() == "ARTIC_V4.1") {
             MASTERFILE = file("${baseDir}/masterfiles/sarscov2_artic_v4.1_masterfile.txt")
             println("Using Artic V4.1 primerset..")
+        }
+        else if (params.PRIMERS.toUpperCase() == "ARTIC_V5.3.2") {
+            MASTERFILE = file("${baseDir}/masterfiles/sarscov2_artic_v5.3.2_masterfile.txt")
+            println("Using Artic V5.3.2 primerset..")
         }
         else {
             MASTERFILE = file("${baseDir}/masterfiles/sarscov2_swift_v2_masterfile.txt")
