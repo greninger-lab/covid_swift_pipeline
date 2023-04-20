@@ -26,4 +26,4 @@ This pipeline takes gzipped fastq files and outputs .bam files aligned to NC_045
 | -profile | __(Recommended)__ Picks which profile in nextflow.config to run (e.g. `-profile cloud_big`). If running on AWS, recommended to run with `profile cloud_big` and for more memory-intensive runs, with `profile cloud_bigger`).
 
 Example paired fastqs are provided in the example/ folder. These can be run with the command:
-- Example command for example fastqs: ```nextflow run greninger-lab/covid_swift_pipeline -latest --INPUT example/ --OUTDIR output/ --PAIRED_END -resume -with-trace with-docker ubuntu:18.04 --PRIMERS v2```
+- Example command for example fastqs: ```nextflow run greninger-lab/covid_swift_pipeline -r master -latest --INPUT example/ --OUTDIR output/ --PAIRED_END --PRIMERS v2 -with-trace with-docker ubuntu:18.04```
