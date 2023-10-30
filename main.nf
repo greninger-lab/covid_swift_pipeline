@@ -94,6 +94,7 @@ if (!params.OUTDIR.endsWith("/")){
 // Use specified primer masterfile
 if(params.NO_CLIPPING == false) {
     if (params.PRIMERS == false) {
+        MASTERFILE = file("${baseDir}/masterfiles/sarscov2_swift_v2_masterfile.txt")
         println("No primerset specified. Defaulting to Swift V2...")
     }
     else {

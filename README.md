@@ -15,7 +15,7 @@ This pipeline takes gzipped fastq files and outputs .bam files aligned to NC_045
 | --SINGLE_END | (Optional) Flag to indicate input reads are single end. By default this pipeline expects paired end reads.
 | --NO_CLIPPING | (Optional) Skip primerclip option for shotgun/CovidSeq runs.
 | --SGRNA_COUNT | (Optional) Add extra step to count sgRNAs.
-| --PRIMERS | (Optional) Specify which primerset to use (e.g. `--PRIMERS qiaseq`). Default: Swift V2. Options: `qiaseq`, `artic_v3`, `artic_v4`, `artic_v4.1`.
+| --PRIMERS | (Optional) Specify which primerset to use (e.g. `--PRIMERS qiaseq`). Default: Swift V2. Options: `qiaseq`,`artic_v3`, `artic_v4`, `artic_v4.1`.
 | --MIN_LEN | (Optional) Set minimum length for trimming. Default: 75.
 | --DOWNSAMPLE | (Optional) Downsample to a number or a fraction of reads using seqtk.
 | -with-docker ubuntu:18.04 | __(Required)__ Runs command with Ubuntu docker.
@@ -26,4 +26,4 @@ This pipeline takes gzipped fastq files and outputs .bam files aligned to NC_045
 | -profile | __(Recommended)__ Picks which profile in nextflow.config to run (e.g. `-profile cloud_big`). If running on AWS, recommended to run with `profile cloud_big` and for more memory-intensive runs, with `profile cloud_bigger`).
 
 Example paired fastqs are provided in the example/ folder. These can be run with the command:
-- Example command for example fastqs: ```nextflow run greninger-lab/covid_swift_pipeline -r master -latest --INPUT example/ --OUTDIR output/ --PAIRED_END --PRIMERS v2 -with-trace -with-docker ubuntu:18.04```
+- Example command for example fastqs: ```nextflow run greninger-lab/covid_swift_pipeline -r master -latest --INPUT example/ --OUTDIR output/ -with-trace -with-docker ubuntu:18.04```
