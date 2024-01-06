@@ -13,7 +13,7 @@ This pipeline takes gzipped fastq files and outputs .bam files aligned to NC_045
 | --INPUT  | __(Required)__ Input folder where gzipped fastqs are located. For current  directory, `./` can be used.
 | --OUTDIR | __(Required)__ Output folder where .bams and consensus fastas will be piped into.
 | --SINGLE_END | (Optional) Flag to indicate input reads are single end. By default this pipeline expects paired end reads.
-| --NO_CLIPPING | (Optional) Skip primerclip option for shotgun/CovidSeq runs.
+| --NO_CLIPPING | (Optional) Skip primerclip option for shotgun runs.
 | --SGRNA_COUNT | (Optional) Add extra step to count sgRNAs.
 | --PRIMERS | (Optional) Specify which primerset to use (e.g. `--PRIMERS qiaseq`). Default: Swift V2. Options: `qiaseq`,`artic_v3`, `artic_v4`, `artic_v4.1`.
 | --MIN_LEN | (Optional) Set minimum length for trimming. Default: 75.
