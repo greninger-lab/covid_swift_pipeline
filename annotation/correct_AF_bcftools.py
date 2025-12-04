@@ -56,6 +56,34 @@ def translate(seq):
             protein+= table[codon] 
     return protein 
 
+def get_ad_info(line):
+    fields = line.split("\t")
+
+    ad_key_field = ad_val_field = None
+
+    # find the column that contains the AD key value
+    for i, field in enumerate(fields):
+        if ":AD:" in field:
+            ad_key_field = i
+            ad_val_field = i + 1;
+            break;
+
+    if not ad_key_field or not ad_key_field:
+        exit("Unable to process allele depth (AD) tag!")
+
+    # find the index of AD in the col: e.g. AD:DT:BF -> index 0
+    ad_val_idx = None
+    for i, field in enumerate(fields[ad_key_field].split(":")):
+        if field == "AD":
+            ad_val_idx = i
+            break;
+
+    if not ad_val_idx:
+        exit("Unable to find AD tag!")
+
+    # now get AD value (finally)
+    return fields[ad_val_field].split(":")[ad_val_idx]
+
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='')
 	parser.add_argument('-name', help="Provide sample name.")
@@ -68,30 +96,48 @@ if __name__ == '__main__':
 	sample_name = args.name
 
 	for line in open("variants.txt"):
-            dp4=line.split("DP4=")[1].split(";")[0]
-            ad = line.split("AD=")[1].split(";")[0]
+            #!!!!!!!!!!!! CHANGED BY EP: 2025-Dec-04
+            # Mutect2 doesn't output DP4 tag, so we instead use the DP tag to get the total depth
+
+            # OLD using DP4: 
+            # fixed_depth = int(dp4.split(",")[0]) + int(dp4.split(",")[1]) + int(dp4.split(",")[2]) + int(dp4.split(",")[3])
+
+            # NEW using DP:
+            dp = line.split("DP=")[1].split(";")[0]
+            fixed_depth = int(dp)
+
+
+            # AD is stored in two separate fields, one for key and one for value:
+
+            ad = get_ad_info(line)
+            print("ALLELE DEPTH: " + ad)
+            
+            #!!!!!!!!!!!!
+    
             #allele_ref = int(ad.split(",")[0]) + int(ad.split(",")[1])
             #allele_alt = int(ad.split(",")[2]) + int(ad.split(",")[3])
             allele_ref = int(ad.split(",")[0])
-            if (int(dp4.split(",")[2]) + int(dp4.split(",")[3])) == 0:
-                allele_alt = 0
-            else:
-                allele_alt = int(ad.split(",")[1])
+            # if (int(dp4.split(",")[2]) + int(dp4.split(",")[3])) == 0:
+            #     allele_alt = 0
+            # else:
+            allele_alt = int(ad.split(",")[1])
             
-            fixed_depth = int(dp4.split(",")[0]) + int(dp4.split(",")[1]) + int(dp4.split(",")[2]) + int(dp4.split(",")[3])
 
             if (allele_ref + allele_alt) > 0 and allele_alt > 0:
+                # EP: IMF not reported by Mutect2, so the else branch should fire always.
                 if("IMF" in line):
                     af = float(line.split("IMF=")[1].split(";")[0])
                 else:
                     af = allele_alt / fixed_depth
                 
                 type = line.split("\t")[1]
+                change = line.split("\t")[2]
 
-                if(af >= 0.01 and type!="synonymous SNV" and len(line.split("\t")[6])<400 and "wholegene" not in line.split("\t")[2]):
+                if(af >= 0.01 and type!="synonymous SNV" and ":p." in change and len(line.split("\t")[6])<400 and "wholegene" not in line.split("\t")[2]):
                     line_parts = line.split("\t")
                     nuc_ref = (line_parts[6])
                     nuc_alt = (line_parts[7])
+                    print("LINE PARTS: " + line_parts[2])
                     fixed_aa_change = line_parts[2].split(":p.")[1].split(",")[0]
                     fixed_protein = line_parts[2].split(":")[1] 
                     #fixed_depth = int(allele_ref + allele_alt)

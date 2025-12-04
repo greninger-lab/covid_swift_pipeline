@@ -96,6 +96,7 @@ if (!params.OUTDIR.endsWith("/")){
 if(params.NO_CLIPPING == false) {
     if (params.PRIMERS == false) {
         println("No primerset specified. Defaulting to Swift V2...")
+        MASTERFILE = file("${baseDir}/masterfiles/sarscov2_swift_v2_masterfile.txt")
     }
     else {
         if (params.PRIMERS.toUpperCase() == "QIASEQ") {
@@ -179,6 +180,7 @@ include { NameSorting } from './modules.nf'
 include { Clipping } from './modules.nf'
 include { BamSorting } from './modules.nf'
 include { GenerateVcf } from './modules.nf'
+include { BCFToolsPrepVcf } from './modules.nf'
 include { GenerateConsensus } from './modules.nf'
 include { PostProcessing } from './modules.nf'
 include { AnnotateVariants } from './modules.nf'
@@ -302,6 +304,13 @@ workflow {
             REFERENCE_FASTA_FAI,
             SPLITCHR
         )
+        BCFToolsPrepVcf(
+            GenerateVcf.out[0],
+            REFERENCE_FASTA,
+            VCFUTILS,
+            REFERENCE_FASTA_FAI,
+            SPLITCHR,
+        )
     } else {
     // Skip primerclip for non-Swift runs
         BamSorting (
@@ -315,9 +324,16 @@ workflow {
             REFERENCE_FASTA_FAI,
             SPLITCHR
         )
+        BCFToolsPrepVcf(
+            GenerateVcf.out[0],
+            REFERENCE_FASTA,
+            VCFUTILS,
+            REFERENCE_FASTA_FAI,
+            SPLITCHR,
+        )
     }
     GenerateConsensus (
-        GenerateVcf.out[0],
+        BCFToolsPrepVcf.out[0],
         REFERENCE_FASTA,
         REFERENCE_FASTA_FAI,
     )
@@ -329,7 +345,7 @@ workflow {
         REFERENCE_FASTA_FAI
     )
     AnnotateVariants (
-        GenerateVcf.out[1],
+        BCFToolsPrepVcf.out[1],
         MAT_PEPTIDES,
         MAT_PEPTIDE_ADDITION,
         RIBOSOMAL_SLIPPAGE,

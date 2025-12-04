@@ -437,14 +437,68 @@ process BamSorting {
 
 // Generate final consensus from pileup from bam.
 process GenerateVcf {
-    container "quay.io/greninger-lab/swift-pipeline:latest"
+    //container "quay.io/greninger-lab/swift-pipeline:latest"
+    container "broadinstitute/gatk:4.6.2.0"
 
 	// Retry on fail at most three times 
-    errorStrategy 'retry'
-    maxRetries 3
+    //errorStrategy 'retry'
+    //maxRetries 3
 
     input:
         tuple val (base), file(BAMFILE),file(INDEX_FILE),file("${base}_summary3.csv"),val(bamsize) //from Clipped_bam_ch
+        file REFERENCE_FASTA
+        file VCFUTILS
+        file REFERENCE_FASTA_FAI
+        file SPLITCHR
+    output:
+        //tuple val(base), val(bamsize), file(BAMFILE),file(INDEX_FILE),file("${base}_Mutect2.vcf")
+        tuple val(base), file(BAMFILE), file(INDEX_FILE), file("${base}_Mutect2.vcf"),file("${base}_summary3.csv"),val(bamsize)
+    
+    publishDir params.OUTDIR, mode: 'copy', pattern: '*_Mutect2.vcf'
+
+    shell:
+    '''
+    #!/bin/bash
+    ls -latr
+
+    R1=!{base}
+
+    echo "bamsize: !{bamsize}"
+
+    #if [ -s !{BAMFILE} ]
+    # More reliable way of checking bam size, because of aliases
+    if (( !{bamsize} > 92 ))
+    then
+         # add RG tag to make GATK happy
+        samtools addreplacerg -@ !{task.cpus} -r '@RG\\tID:samplename\\tSM:samplename' !{BAMFILE} -o !{base}_TMP.bam
+        samtools index -@ !{task.cpus} !{base}_TMP.bam
+    
+        # make sequence dict (GATK also wants it)
+        gatk CreateSequenceDictionary -R !{REFERENCE_FASTA}
+    
+        # run mutect2
+        gatk Mutect2 --enable-all-annotations \\
+            -R !{REFERENCE_FASTA} -I !{base}_TMP.bam -O \${R1}_Mutect2.vcf \\
+            --callable-depth 1 \\
+            --f1r2-median-mq 0 --f1r2-min-bq 0 \\
+            --min-base-quality-score 30 \\
+            && rm !{base}_TMP.bam
+    else
+        touch \${R1}_Mutect2.vcf
+    fi
+    '''
+}
+
+// Apply BCFtools filtering to the Mutect2 VCF we generated from GenerateVCF.
+process BCFToolsPrepVcf {
+    container "quay.io/greninger-lab/swift-pipeline:latest"
+
+	// Retry on fail at most three times 
+    //errorStrategy 'retry'
+    //maxRetries 1
+
+    input:
+        tuple val (base), file(BAMFILE),file(INDEX_FILE),file("${base}_Mutect2.vcf"),file("${base}_summary3.csv"),val(bamsize)
         file REFERENCE_FASTA
         file VCFUTILS
         file REFERENCE_FASTA_FAI
@@ -468,33 +522,13 @@ process GenerateVcf {
     # More reliable way of checking bam size, because of aliases
     if (( !{bamsize} > 92 ))
     then
-        # Parallelize pileup based on number of cores
-        splitnum=$(($((29903/!{task.cpus}))+1))
-        perl !{VCFUTILS} splitchr -l $splitnum !{REFERENCE_FASTA_FAI} | \\
-        #cat !{SPLITCHR} | \\
-            xargs -I {} -n 1 -P !{task.cpus} sh -c \\
-                "/usr/local/miniconda/bin/bcftools mpileup \\
-                    -f !{REFERENCE_FASTA} -r {} \\
-                    --count-orphans \\
-                    --min-MQ 20 \\
-                    --min-BQ 30 \\
-                    --max-depth 50000 \\
-                    --max-idepth 500000 \\
-                    --annotate FORMAT/AD,FORMAT/ADF,FORMAT/ADR,FORMAT/DP,FORMAT/SP,INFO/AD,INFO/ADF,INFO/ADR \\
-                !{BAMFILE} | /usr/local/miniconda/bin/bcftools call -A -m -Oz - > tmp.{}.vcf.gz"
-        
-        # Concatenate parallelized vcfs back together
-        gunzip tmp*vcf.gz
-        mv tmp.NC_045512.2\\:1-* \${R1}_catted.vcf
-        for file in tmp*.vcf; do grep -v "#" $file >> \${R1}_catted.vcf; done
+        #cat \${R1}_Mutect2.vcf | awk '$1 ~ /^#/ {print $0;next} {print $0 | "sort -k1,1 -k2,2n"}' | /usr/local/miniconda/bin/bcftools norm -m -any > \${R1}_pre_bcftools.vcf
 
-        cat \${R1}_catted.vcf | awk '$1 ~ /^#/ {print $0;next} {print $0 | "sort -k1,1 -k2,2n"}' | /usr/local/miniconda/bin/bcftools norm -m -any > \${R1}_pre_bcftools.vcf
-        
-        # Make sure variants are majority variants for consensus calling
-        #/usr/local/miniconda/bin/bcftools filter -i '(DP4[0]+DP4[1]) < (DP4[2]+DP4[3]) && ((DP4[2]+DP4[3]) > 0)' --threads !{task.cpus} \${R1}_pre_bcftools.vcf -o \${R1}.vcf
-        #/usr/local/miniconda/bin/bcftools filter -e 'IMF < 0.5' \${R1}_pre2.vcf -o \${R1}.vcf
-	
-        /usr/local/miniconda/bin/bcftools filter -i 'IMF > 0.5 || (DP4[0]+DP4[1]) < (DP4[2]+DP4[3]) && ((DP4[2]+DP4[3]) > 0)' --threads !{task.cpus} \${R1}_pre_bcftools.vcf -o \${R1}_pre2.vcf
+        cat \${R1}_Mutect2.vcf | awk '$1 ~ /^#/ {print $0;next} {print $0 | "sort -k1,1 -k2,2n"}' > \${R1}_pre_bcftools.vcf
+
+        /usr/local/miniconda/bin/bcftools filter -i 'FORMAT/AF[0:0] > 0.5' \\
+          --threads !{task.cpus} \${R1}_pre_bcftools.vcf -o \${R1}_pre2.vcf
+
         /usr/local/miniconda/bin/bcftools norm --check-ref s --fasta-ref !{REFERENCE_FASTA} -Ov \${R1}_pre2.vcf > \${R1}_pre3.vcf
 
         # pull out header
@@ -509,9 +543,9 @@ process GenerateVcf {
         touch \${R1}_pre_bcftools.vcf
         touch \${R1}.vcf.gz
     fi
-
     '''
 }
+
 
 // Generate final consensus from vcf.
 process GenerateConsensus {
