@@ -7,8 +7,9 @@ from datetime import datetime
 import re
 import os.path
 import pandas as pd
-import sys
 from Bio.Seq import Seq 
+
+from ORF_nt_db import PROTEIN_TO_NUCLEOTIDE
 
 fixed_file = open("filtered_variants.txt", "w+")
 
@@ -108,9 +109,7 @@ if __name__ == '__main__':
 
 
             # AD is stored in two separate fields, one for key and one for value:
-
             ad = get_ad_info(line)
-            print("ALLELE DEPTH: " + ad)
             
             #!!!!!!!!!!!!
     
@@ -137,7 +136,6 @@ if __name__ == '__main__':
                     line_parts = line.split("\t")
                     nuc_ref = (line_parts[6])
                     nuc_alt = (line_parts[7])
-                    print("LINE PARTS: " + line_parts[2])
                     fixed_aa_change = line_parts[2].split(":p.")[1].split(",")[0]
                     fixed_protein = line_parts[2].split(":")[1] 
                     #fixed_depth = int(allele_ref + allele_alt)
@@ -169,12 +167,21 @@ if __name__ == '__main__':
                         #translated_ref = translate(nuc_ref)
                         aa_start_pos = int(fixed_aa_change.split("_")[0])
                         nuc_pos = int(line_parts[4])
-                        
-                        
+                        deleted_aa = ""
+
+                        ### these variables don't get incremented, in case we need to use the start again.
+                        start_nuc_pos = nuc_pos
+                        start_aa_start_pos = aa_start_pos
+                        start_nuc_num = nuc_num
+                        ###
+
+                        start_split_amino_ref = find_aa_ref(fixed_protein, start_aa_start_pos)
+                                                
                         for codon in range(3,len(nuc_ref) + 1, 3):
                             split_nuc_ref = (nuc_ref[codon-3:codon])
                             #split_amino_ref = (translated_ref[int(codon/3)-1])
                             split_amino_ref = find_aa_ref(fixed_protein,aa_start_pos)
+                            deleted_aa += split_amino_ref
 
                             nuc_change = split_nuc_ref + str(nuc_pos) + "del"
                             #                SAMPLE_ID              GENE                  GENPOS                   AAPOS                      AAREF              AASUB           NUCCHANGE             AAFREQ               DEPTH                                                                   TYPE
@@ -182,6 +189,35 @@ if __name__ == '__main__':
                             aa_start_pos += 1
                             nuc_pos +=3
                             nuc_num = int(nuc_num) + 3 
+
+                        # if this deletion occurred in the middle of a codon, it would have resulted in a potential amino acid substitution (unless the new codon is synonymous with the ref).
+                        # if not, we need to add an extra mutation column marking this.
+                        base_before_del_zero_idx = int(start_nuc_num) - 2
+                        position_in_codon = base_before_del_zero_idx % 3
+                        if position_in_codon == 2: #the base before deletion is the last in the codon
+                            continue
+
+                        bases_to_add = 2 - position_in_codon
+                        del_len = len(nuc_ref)
+                        codon_from_del = PROTEIN_TO_NUCLEOTIDE[fixed_protein][base_before_del_zero_idx]
+
+                        # build the amino acid with the bases following the deletion
+                        nuc_index = base_before_del_zero_idx + del_len + 1
+                        for i in range(2):
+                            codon_from_del += PROTEIN_TO_NUCLEOTIDE[fixed_protein][nuc_index]
+                            nuc_index += 1
+
+                        # get the original amino acid contributing bases to the "right" side of the deletion
+                        aa_right = find_aa_ref(fixed_protein, aa_start_pos)
+
+                        # if different from ref, report it too.
+                        aa_from_del = translate(codon_from_del.replace("U", "T"))
+                        print(start_nuc_num + " " + aa_from_del + " Deletion length: " + str(del_len))
+                        if aa_from_del != start_split_amino_ref:
+                            nuc_change = deleted_aa + aa_right + str(start_aa_start_pos) + aa_from_del
+
+                        fixed_file.write(sample_name + "," + str(fixed_protein) + "," + line_parts[4] + "," + str(start_aa_start_pos) + "," + start_split_amino_ref + "," + aa_from_del + "," +  nuc_change + "," + str(af) + "," + str(fixed_depth) + "," + str(allele_ref) + "," + str(allele_alt) + "," + "AA substitution from nonframeshift deletion"+ "," + start_nuc_num + "\n")#+ "," + mat_peptide + "," + mat_peptide_nuc_change + "," + mat_peptide_aa_change + "\n") 
+
                     elif(type=="nonframeshift insertion"):
                         #translated_alt = translate(nuc_alt)
                         aa_start_pos = int(fixed_aa_change.split("delins")[0][1:])
@@ -190,7 +226,7 @@ if __name__ == '__main__':
                         split_amino_alt = fixed_aa_change.split("delins")[1]
                         nuc_change = line_parts[4] + "ins" + fixed_nuc_change.split("ins")[1]
                         #                SAMPLE_ID              GENE                  GENPOS                   AAPOS                      AAREF                         AASUB             NUCCHANGE             AAFREQ               DEPTH                                                                   TYPE
-                        fixed_file.write(sample_name + "," + str(fixed_protein) + "," + line_parts[4] + "," + str(aa_start_pos) + "," + split_amino_ref + "," + split_amino_alt + "," +  nuc_change + "," + str(af) + "," + str(fixed_depth) + "," + str(allele_ref) + "," + str(allele_alt) + "," + line_parts[1]  + "," + nuc_num + "\n")#+ "," + mat_peptide + "," + mat_peptide_nuc_change + "," + mat_peptide_aa_change + "\n") 
+                        fixed_file.write(sample_name + "," + str(fixed_protein) + "," + line_parts[4] + "," + str(start_aa_start_pos) + "," + split_amino_ref + "," + split_amino_alt + "," +  nuc_change + "," + str(af) + "," + str(fixed_depth) + "," + str(allele_ref) + "," + str(allele_alt) + "," + line_parts[1]  + "," + nuc_num + "\n")#+ "," + mat_peptide + "," + mat_peptide_nuc_change + "," + mat_peptide_aa_change + "\n") 
                     
                     elif(type == "frameshift insertion"):
                         #split_amino_ref = fixed_aa_change[0]
