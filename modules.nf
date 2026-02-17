@@ -196,7 +196,8 @@ process Fastqc_SE {
 process Aligning {
     // container "quay.io/biocontainers/bbmap:38.86--h1296035_0"
     // container "quay.io/biocontainers/bwa:0.7.17--hed695b0_7"
-    container "dukegcb/bwa-samtools"
+    // container "dukegcb/bwa-samtools"
+    container "quay.io/epil02/bwa-samtools:0.7.12_1.2.1-254-6462e34"
 
     // Retry on fail at most three times 
     errorStrategy 'retry'
@@ -437,8 +438,9 @@ process BamSorting {
 
 // Generate final consensus from pileup from bam.
 process GenerateVcf {
-    //container "quay.io/greninger-lab/swift-pipeline:latest"
-    container "broadinstitute/gatk:4.6.2.0"
+    container "quay.io/epil02/gatk:4.6.2.0"
+    // This container was generated directly from 
+    // broadinsitute/gatk:4.6.2.0
 
 	// Retry on fail at most three times 
     //errorStrategy 'retry'
@@ -682,6 +684,7 @@ process AnnotateVariants {
         file AT_REFGENE_MRNA
         file CORRECT_AF_BCFTOOLS
         file FIX_COMPLEX_MUTATIONS
+        file ORF_NT_TO_PROTEIN_DB
         
     output: 
         file("${base}_bcftools_variants.csv")
