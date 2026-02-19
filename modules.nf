@@ -194,9 +194,7 @@ process Fastqc_SE {
 
 // Align fastq files to Wuhan refseq using bwa
 process Aligning {
-    // container "quay.io/biocontainers/bbmap:38.86--h1296035_0"
-    // container "quay.io/biocontainers/bwa:0.7.17--hed695b0_7"
-    container "dukegcb/bwa-samtools"
+    container "quay.io/epil02/bwa-samtools:0.7.12_1.2.1-254-6462e34"
 
     // Retry on fail at most three times 
     errorStrategy 'retry'
@@ -225,9 +223,7 @@ process Aligning {
 
 // Align fastq files to Wuhan refseq using bwa
 process Aligning_SE {
-    // container "quay.io/biocontainers/bbmap:38.86--h1296035_0"
-    // container "quay.io/biocontainers/bwa:0.7.17--hed695b0_7"
-    container "dukegcb/bwa-samtools"
+    container "quay.io/epil02/bwa-samtools:0.7.12_1.2.1-254-6462e34"
 
     // Retry on fail at most three times 
     errorStrategy 'retry'
