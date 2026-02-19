@@ -437,7 +437,7 @@ process BamSorting {
 
 // Generate final consensus from pileup from bam.
 process GenerateVcf {
-    container "quay.io/greninger-lab/swift-pipeline:latest"
+    container "quay.io/epil02/swift-pipeline:1.0"
 
 	// Retry on fail at most three times 
     errorStrategy 'retry'
@@ -463,6 +463,7 @@ process GenerateVcf {
     R1=!{base}
 
     echo "bamsize: !{bamsize}"
+    bcftools --version
 
     #if [ -s !{BAMFILE} ]
     # More reliable way of checking bam size, because of aliases
@@ -473,7 +474,7 @@ process GenerateVcf {
         perl !{VCFUTILS} splitchr -l $splitnum !{REFERENCE_FASTA_FAI} | \\
         #cat !{SPLITCHR} | \\
             xargs -I {} -n 1 -P !{task.cpus} sh -c \\
-                "/usr/local/miniconda/bin/bcftools mpileup \\
+                "bcftools mpileup \\
                     -f !{REFERENCE_FASTA} -r {} \\
                     --count-orphans \\
                     --min-MQ 20 \\
@@ -481,21 +482,21 @@ process GenerateVcf {
                     --max-depth 50000 \\
                     --max-idepth 500000 \\
                     --annotate FORMAT/AD,FORMAT/ADF,FORMAT/ADR,FORMAT/DP,FORMAT/SP,INFO/AD,INFO/ADF,INFO/ADR \\
-                !{BAMFILE} | /usr/local/miniconda/bin/bcftools call -A -m -Oz - > tmp.{}.vcf.gz"
+                !{BAMFILE} | bcftools call -A -m -Oz - > tmp.{}.vcf.gz"
         
         # Concatenate parallelized vcfs back together
         gunzip tmp*vcf.gz
         mv tmp.NC_045512.2\\:1-* \${R1}_catted.vcf
         for file in tmp*.vcf; do grep -v "#" $file >> \${R1}_catted.vcf; done
 
-        cat \${R1}_catted.vcf | awk '$1 ~ /^#/ {print $0;next} {print $0 | "sort -k1,1 -k2,2n"}' | /usr/local/miniconda/bin/bcftools norm -m -any > \${R1}_pre_bcftools.vcf
+        cat \${R1}_catted.vcf | awk '$1 ~ /^#/ {print $0;next} {print $0 | "sort -k1,1 -k2,2n"}' | bcftools norm -m -any > \${R1}_pre_bcftools.vcf
         
         # Make sure variants are majority variants for consensus calling
-        #/usr/local/miniconda/bin/bcftools filter -i '(DP4[0]+DP4[1]) < (DP4[2]+DP4[3]) && ((DP4[2]+DP4[3]) > 0)' --threads !{task.cpus} \${R1}_pre_bcftools.vcf -o \${R1}.vcf
-        #/usr/local/miniconda/bin/bcftools filter -e 'IMF < 0.5' \${R1}_pre2.vcf -o \${R1}.vcf
+        #bcftools filter -i '(DP4[0]+DP4[1]) < (DP4[2]+DP4[3]) && ((DP4[2]+DP4[3]) > 0)' --threads !{task.cpus} \${R1}_pre_bcftools.vcf -o \${R1}.vcf
+        #bcftools filter -e 'IMF < 0.5' \${R1}_pre2.vcf -o \${R1}.vcf
 	
-        /usr/local/miniconda/bin/bcftools filter -i 'IMF > 0.5 || (DP4[0]+DP4[1]) < (DP4[2]+DP4[3]) && ((DP4[2]+DP4[3]) > 0)' --threads !{task.cpus} \${R1}_pre_bcftools.vcf -o \${R1}_pre2.vcf
-        /usr/local/miniconda/bin/bcftools norm --check-ref s --fasta-ref !{REFERENCE_FASTA} -Ov \${R1}_pre2.vcf > \${R1}_pre3.vcf
+        bcftools filter -i 'IMF > 0.5 || (DP4[0]+DP4[1]) < (DP4[2]+DP4[3]) && ((DP4[2]+DP4[3]) > 0)' --threads !{task.cpus} \${R1}_pre_bcftools.vcf -o \${R1}_pre2.vcf
+        bcftools norm --check-ref s --fasta-ref !{REFERENCE_FASTA} -Ov \${R1}_pre2.vcf > \${R1}_pre3.vcf
 
         # pull out header
         grep "#" \${R1}_pre3.vcf > \${R1}.vcf
