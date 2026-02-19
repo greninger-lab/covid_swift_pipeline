@@ -649,6 +649,7 @@ process AnnotateVariants {
         file AT_REFGENE_MRNA
         file CORRECT_AF_BCFTOOLS
         file FIX_COMPLEX_MUTATIONS
+        file ORF_NT_TO_PROTEIN_DB 
         
     output: 
         file("${base}_bcftools_variants.csv")
