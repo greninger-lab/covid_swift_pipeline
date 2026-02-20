@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 import re
 import os.path
-import pandas as pd
+import pandas as pd 
 import sys
 from Bio.Seq import Seq 
 from ORF_nt_db import PROTEIN_TO_NUCLEOTIDE
@@ -147,18 +147,21 @@ if __name__ == '__main__':
                             nuc_pos +=3
                             nuc_num = int(nuc_num) + 3 
                         # if this deletion occurred in the middle of a codon, it would have resulted in a potential amino acid substitution (unless the new codon is synonymous with the ref).
-                                            # if not, we need to add an extra mutation column marking this.
-                        base_before_del_zero_idx = int(start_nuc_num) - 2
-                        position_in_codon = base_before_del_zero_idx % 3
+                        # if not, we need to add an extra mutation row marking this.
+
+                        base_before_del = int(start_nuc_num) - 1 # still 1-indexed, subtract 1 to get base before del
+                        base_before_del_idx = base_before_del - 1 # zero indexed
+
+                        position_in_codon = base_before_del % 3
                         if position_in_codon == 2: #the base before deletion is the last in the codon
                             continue
 
-                        bases_to_add = 2 - position_in_codon
                         del_len = len(nuc_ref)
-                        codon_from_del = PROTEIN_TO_NUCLEOTIDE[fixed_protein][base_before_del_zero_idx]
 
                         # build the amino acid with the bases following the deletion
-                        nuc_index = base_before_del_zero_idx + del_len + 1
+                        codon_from_del = PROTEIN_TO_NUCLEOTIDE[fixed_protein][base_before_del_idx]
+
+                        nuc_index = base_before_del_idx + del_len + 1
                         for i in range(2):
                             codon_from_del += PROTEIN_TO_NUCLEOTIDE[fixed_protein][nuc_index]
                             nuc_index += 1
@@ -168,11 +171,12 @@ if __name__ == '__main__':
 
                         # if different from ref, report it too.
                         aa_from_del = translate(codon_from_del.replace("U", "T"))
-                        print(start_nuc_num + " " + aa_from_del + " Deletion length: " + str(del_len))
                         if aa_from_del != start_split_amino_ref:
-                            nuc_change = deleted_aa + aa_right + str(start_aa_start_pos) + aa_from_del
+                            # nuc_change = deleted_aa + aa_right + str(start_aa_start_pos) + aa_from_del + "del"
+                            nuc_change = nuc_ref + str(start_nuc_pos) + "del"
+                            aa_change = deleted_aa + aa_right
 
-                        fixed_file.write(sample_name + "," + str(fixed_protein) + "," + line_parts[4] + "," + str(start_aa_start_pos) + "," + start_split_amino_ref + "," + aa_from_del + "," +  nuc_change + "," + str(af) + "," + str(fixed_depth) + "," + str(allele_ref) + "," + str(allele_alt) + "," + "AA substitution from nonframeshift deletion"+ "," + start_nuc_num + "\n")#+ "," + mat_peptide + "," + mat_peptide_nuc_change + "," + mat_peptide_aa_change + "\n") 
+                            fixed_file.write(sample_name + "," + str(fixed_protein) + "," + line_parts[4] + "," + str(start_aa_start_pos) + "," + aa_change + "," + aa_from_del + "," +  nuc_change + "," + str(af) + "," + str(fixed_depth) + "," + str(allele_ref) + "," + str(allele_alt) + "," + "AA substitution from nonframeshift deletion"+ "," + start_nuc_num + "\n")#+ "," + mat_peptide + "," + mat_peptide_nuc_change + "," + mat_peptide_aa_change + "\n") 
                     elif(type=="nonframeshift insertion"):
                         #translated_alt = translate(nuc_alt)
                         aa_start_pos = int(fixed_aa_change.split("delins")[0][1:])
